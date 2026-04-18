@@ -1,82 +1,85 @@
-import { ArrowRight, MessageCircleMore, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
-import { SITE } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
 
 export function HeroBanner() {
   return (
-    <section className="relative overflow-hidden rounded-[36px] border border-white/10 bg-hero-premium p-8 shadow-premium md:p-12">
-      <div className="absolute inset-0 grid-bg opacity-30" />
-      <div className="relative grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.22em] text-slate-200">
-            Pembayaran Cepat • QRIS Dinamis • Layanan Tertata
+    <section className="relative overflow-hidden pt-12 md:pt-16">
+      <div className="absolute inset-x-0 top-10 h-72 bg-[radial-gradient(circle_at_top_left,rgba(250,204,21,0.2),transparent_38%),radial-gradient(circle_at_top_right,rgba(34,197,94,0.18),transparent_34%)]" />
+      <div className="container relative z-10">
+        <div className="surface-card grid gap-10 p-8 md:grid-cols-[1.2fr,0.8fr] md:p-10 xl:p-12">
+          <div className="reveal-up space-y-6">
+            <div className="badge-chip">Marketplace digital terpercaya</div>
+            <div className="space-y-5">
+              <h1 className="text-4xl font-black leading-[0.98] tracking-tight text-slate-950 md:text-6xl xl:text-7xl dark:text-white">
+                Tempat belanja layanan digital yang lebih rapi, cepat, dan nyaman.
+              </h1>
+              <p className="max-w-2xl text-base leading-8 text-slate-600 md:text-lg dark:text-slate-300">
+                Kograph Premium menghadirkan pembelian akun premium, panel, dan kebutuhan digital lain dengan tampilan yang jelas, proses pembayaran yang aman, serta detail pesanan yang mudah ditinjau kembali kapan pun diperlukan.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href="/products" className="primary-button">
+                Lihat semua produk
+              </Link>
+              <Link href="/cek-pesanan" className="secondary-button">
+                Cek status pesanan
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                {
+                  title: "Pilihan yang tertata",
+                  text: "Produk ditampilkan lebih ringkas agar mudah dibandingkan sebelum checkout."
+                },
+                {
+                  title: "Pembayaran terverifikasi",
+                  text: "Status transaksi dipantau otomatis sehingga proses order terasa lebih tenang."
+                },
+                {
+                  title: "Akses detail pesanan",
+                  text: "Resi, invoice, dan credential bisa dicek ulang langsung dari web."
+                }
+              ].map((item) => (
+                <div key={item.title} className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur">
+                  <div className="text-lg font-bold text-white">{item.title}</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-300">{item.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <h1 className="mt-6 text-4xl font-black leading-tight md:text-6xl">
-            <span className="gradient-text">Kograph Premium</span>
-          </h1>
-
-          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300">
-            Layanan digital dengan alur pemesanan yang rapi, cepat, dan mudah dipantau. Pilih produk, lanjut ke pembayaran QRIS dinamis, lalu pantau status transaksi secara realtime hingga pesanan selesai.
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="#catalog"><Button>Mulai Belanja <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
-            <a href={`https://t.me/${SITE.botUsername}`} target="_blank" rel="noreferrer">
-              <Button variant="secondary"><MessageCircleMore className="mr-2 h-4 w-4" />Cek Status via Bot</Button>
-            </a>
-          </div>
-
-          <div className="mt-8 grid gap-3 md:grid-cols-3">
-            <div className="glass rounded-3xl p-4">
-              <ShieldCheck className="h-5 w-5 text-emerald-400" />
-              <div className="mt-2 font-semibold text-white">Aman</div>
-              <div className="mt-1 text-sm text-slate-300">Pembayaran tervalidasi dari server sebelum pesanan diproses.</div>
+          <div className="reveal-up space-y-4 [animation-delay:180ms]">
+            <div className="rounded-[32px] border border-amber-300/20 bg-gradient-to-br from-amber-200 via-amber-300 to-amber-100 p-7 text-slate-950 shadow-2xl shadow-amber-400/20">
+              <div className="text-xs font-black uppercase tracking-[0.28em] text-slate-700">Alur belanja</div>
+              <ol className="mt-4 space-y-4 text-sm leading-8 text-slate-900/90">
+                <li>1. Pilih produk atau paket yang paling sesuai dengan kebutuhan Anda.</li>
+                <li>2. Lanjutkan pembayaran melalui QRIS dinamis yang tersedia.</li>
+                <li>3. Setelah transaksi tervalidasi, sistem memperbarui status order secara otomatis.</li>
+                <li>4. Resi, invoice, dan detail layanan dapat dicek ulang langsung dari website.</li>
+              </ol>
             </div>
-            <div className="glass rounded-3xl p-4">
-              <Zap className="h-5 w-5 text-brand-300" />
-              <div className="mt-2 font-semibold text-white">Realtime</div>
-              <div className="mt-1 text-sm text-slate-300">QRIS realtime & update status langsung</div>
-            </div>
-            <div className="glass rounded-3xl p-4">
-              <MessageCircleMore className="h-5 w-5 text-fuchsia-300" />
-              <div className="mt-2 font-semibold text-white">Support & Status</div>
-              <div className="mt-1 text-sm text-slate-300">
-                Bisa cek resi tanpa login dan hubungi support saat dibutuhkan.
+            <div className="surface-card p-6">
+              <div className="text-xs font-black uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">Nilai utama</div>
+              <div className="mt-4 space-y-3">
+                {[
+                  [
+                    "Tampilan profesional",
+                    "Susunan halaman dibuat bersih dan terstruktur agar proses checkout terasa lebih meyakinkan."
+                  ],
+                  [
+                    "Nyaman di desktop dan mobile",
+                    "Semua elemen penting tetap mudah dibaca dan diakses di berbagai perangkat."
+                  ]
+                ].map(([title, text]) => (
+                  <div key={title} className="rounded-[24px] border border-slate-200/70 bg-slate-50/80 p-5 dark:border-white/10 dark:bg-white/5">
+                    <div className="text-base font-bold text-slate-950 dark:text-white">{title}</div>
+                    <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">{text}</p>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 self-end">
-          <div className="glass rounded-[30px] p-5">
-            <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Kograph Support</div>
-            <div className="mt-4 rounded-3xl border border-white/10 bg-slate-950/60 p-5">
-              <div className="text-lg font-semibold text-white">Fast Support Line</div>
-              <div className="mt-3 space-y-2 text-sm text-slate-300">
-                <div>WA: {SITE.support.whatsapp}</div>
-                <div>Email: {SITE.support.email}</div>
-                <div>Telegram: {SITE.support.telegram}</div>
-                <div>Bot Username: {SITE.botUsername}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass rounded-[30px] p-5">
-            <div className="text-sm uppercase tracking-[0.2em] text-slate-400">
-              Pengalaman Belanja
-            </div>
-
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-              <div>• Pembayaran QRIS dinamis Pakasir yang langsung siap dipindai</div>
-              <div>• Detail transaksi dan status order diperbarui otomatis</div>
-              <div>• Invoice transaksi bisa langsung diunduh kapan saja</div>
-              <div>• Status pesanan dapat dicek dengan mudah lewat bot Telegram</div>
             </div>
           </div>
         </div>
       </div>
-    </section >
+    </section>
   );
 }

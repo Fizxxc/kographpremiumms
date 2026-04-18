@@ -7,6 +7,7 @@ import {
 } from "@/lib/pterodactyl";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { getDefaultWhatsappBotEnvironment } from "@/lib/panel-packages";
+import { sendTopupPaidEmail, sendTransactionPaidEmail } from "@/lib/transaction-emails";
 import {
   isChatBasedService,
   isPanelService,
@@ -284,9 +285,11 @@ export async function fulfillProductOrder(orderId: string) {
   const isChatService =
     isChatBasedService(product.service_type) || Boolean(product.live_chat_enabled);
   const isStockManaged = isStockManagedService(product.service_type);
+  const currentStatus = String((tx as any).status || "pending").toLowerCase();
+  const isPaid = ["settlement", "capture"].includes(currentStatus);
 
-  if (!isPanel && !isChatService && (tx as any).status === "settlement") {
-    return { already_settled: true };
+  if (!isPaid) {
+    return { pending: true, status: currentStatus };
   }
 
   if (isStockManaged) {
@@ -295,22 +298,27 @@ export async function fulfillProductOrder(orderId: string) {
     });
     if (rpcError) throw new Error(rpcError.message);
 
-    const { error: soldCountError } = await admin
-      .from("products")
-      .update({ sold_count: Number(product.sold_count || 0) + 1 })
-      .eq("id", product.id);
+    if (data?.fulfilled && !data?.already_settled) {
+      const { error: soldCountError } = await admin
+        .from("products")
+        .update({ sold_count: Number(product.sold_count || 0) + 1 })
+        .eq("id", product.id);
 
-    if (soldCountError) throw new Error(soldCountError.message);
+      if (soldCountError) throw new Error(soldCountError.message);
+    }
 
     await notifyTelegramProduct(tx, product.name, null);
+    await sendTransactionPaidEmail(orderId).catch((mailError) => {
+      console.warn("Failed to send order email:", mailError instanceof Error ? mailError.message : mailError);
+    });
     return data;
   }
 
   if (isChatService) {
-    if (
-      (tx as any).status === "settlement" &&
-      (tx as any).fulfillment_data?.type === "chat_service"
-    ) {
+    if ((tx as any).fulfillment_data?.type === "chat_service" && (tx as any).fulfillment_data?.room_id) {
+      await sendTransactionPaidEmail(orderId).catch((mailError) => {
+        console.warn("Failed to send order email:", mailError instanceof Error ? mailError.message : mailError);
+      });
       return {
         already_settled: true,
         fulfillment_data: (tx as any).fulfillment_data,
@@ -354,13 +362,17 @@ export async function fulfillProductOrder(orderId: string) {
       fulfillmentData
     );
 
+    await sendTransactionPaidEmail(orderId).catch((mailError) => {
+      console.warn("Failed to send order email:", mailError instanceof Error ? mailError.message : mailError);
+    });
+
     return { fulfilled: true, fulfillment_data: fulfillmentData };
   }
 
-  if (
-    (tx as any).status === "settlement" &&
-    (tx as any).fulfillment_data?.panel_email
-  ) {
+  if ((tx as any).fulfillment_data?.panel_email) {
+    await sendTransactionPaidEmail(orderId).catch((mailError) => {
+      console.warn("Failed to send order email:", mailError instanceof Error ? mailError.message : mailError);
+    });
     return {
       already_settled: true,
       fulfillment_data: (tx as any).fulfillment_data,
@@ -498,6 +510,9 @@ export async function fulfillProductOrder(orderId: string) {
   }
 
   await notifyTelegramProduct(tx, product.name, fulfillmentData);
+  await sendTransactionPaidEmail(orderId).catch((mailError) => {
+    console.warn("Failed to send order email:", mailError instanceof Error ? mailError.message : mailError);
+  });
   return { fulfilled: true, fulfillment_data: fulfillmentData };
 }
 
@@ -511,7 +526,12 @@ export async function settleWalletTopup(orderId: string) {
     .single();
 
   if (error || !topup) throw new Error(error?.message || "Topup tidak ditemukan");
-  if ((topup as any).status === "settlement") return { already_settled: true };
+  if ((topup as any).status === "settlement") {
+    await sendTopupPaidEmail(orderId).catch((mailError) => {
+      console.warn("Failed to send topup email:", mailError instanceof Error ? mailError.message : mailError);
+    });
+    return { already_settled: true };
+  }
 
   const { error: topupUpdateError } = await admin
     .from("wallet_topups")
@@ -535,6 +555,10 @@ export async function settleWalletTopup(orderId: string) {
     orderId,
     Number((topup as any).amount)
   );
+
+  await sendTopupPaidEmail(orderId).catch((mailError) => {
+    console.warn("Failed to send topup email:", mailError instanceof Error ? mailError.message : mailError);
+  });
 
   return { settled: true };
 }

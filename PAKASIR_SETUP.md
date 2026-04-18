@@ -3,8 +3,8 @@
 Tambahkan environment variable berikut di Vercel dan `.env.local`:
 
 ```env
-PAKASIR_PROJECT_SLUG=kograph
-PAKASIR_API_KEY=rG7YEodPLzRjlAjHfAgdYQo7i8spdgC2
+PAKASIR_PROJECT_SLUG=slug_project_anda
+PAKASIR_API_KEY=api_key_project_anda
 PAKASIR_BASE_URL=https://app.pakasir.com
 ```
 

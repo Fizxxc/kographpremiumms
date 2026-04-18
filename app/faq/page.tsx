@@ -1,4 +1,47 @@
-import { Card } from "@/components/ui/card";
-import { SITE } from "@/lib/constants";
-const faqs = [["Bagaimana cara cek order?",`Silakan buka bot @${SITE.botUsername} lalu gunakan token order dari halaman pembayaran atau halaman orders.`],["Apakah sekarang ada bot auto order?",`Ada. Anda bisa gunakan @${SITE.autoOrderBotUsername} untuk membuat order produk dan top up saldo langsung dari Telegram.`],["Bagaimana kalau saldo saya hilang?","Login ke akun Anda, buka halaman profile, lalu isi form report saldo hilang. Admin akan meninjau akun yang benar agar tidak tertukar."],["Apakah saya bisa top up saldo?",`Bisa. Di halaman profile tersedia form top up saldo, dan di Telegram Anda juga bisa pakai @${SITE.autoOrderBotUsername} dengan command /topup.`],["Apakah admin bisa membantu saat akun bermasalah?","Bisa. Admin memiliki panel keamanan untuk meninjau report, riwayat saldo, memperbarui catatan keamanan, dan membantu pemulihan secara lebih aman."],["Bagaimana pembelian panel Pterodactyl diproses?","Saat checkout panel, Anda cukup memasukkan ID Telegram. Setelah pembayaran terverifikasi, sistem akan memproses panel sesuai konfigurasi produk dan menampilkan detail pengiriman di halaman order."],];
-export default function FAQPage(){ return <div className="space-y-6"><div><div className="text-sm uppercase tracking-[0.2em] text-slate-400">Bantuan</div><h1 className="mt-2 text-3xl font-bold text-white">FAQ</h1><p className="mt-2 text-sm text-slate-300">Disusun dengan gaya yang ringkas, lebih manusiawi, dan mudah dipahami seperti halaman FAQ toko premium pada umumnya.</p></div><div className="space-y-4">{faqs.map(([q,a])=><Card key={q}><div className="text-lg font-semibold text-white">{q}</div><p className="mt-3 text-sm leading-7 text-slate-300">{a}</p></Card>)}</div></div>; }
+const faqs = [
+  {
+    q: "Bagaimana cara mengecek status pesanan?",
+    a: "Gunakan halaman cek pesanan dengan resi order yang Anda terima setelah checkout. Anda juga bisa memakai bot Telegram @KographcekBot untuk pengecekan cepat."
+  },
+  {
+    q: "Apakah invoice tersedia setelah pembayaran berhasil?",
+    a: "Ya. Invoice PDF disiapkan otomatis setelah transaksi tervalidasi dan bisa diunduh kembali dari halaman detail pesanan."
+  },
+  {
+    q: "Apakah credential dikirim otomatis?",
+    a: "Untuk produk yang mendukung pengiriman otomatis, credential akan tampil di web dan dikirim juga ke email pelanggan secara otomatis setelah pesanan siap."
+  },
+  {
+    q: "Bagaimana jika saya salah memasukkan email atau data akun?",
+    a: "Segera hubungi support agar tim kami dapat membantu pengecekan. Semakin cepat dilaporkan, semakin mudah penyesuaiannya."
+  },
+  {
+    q: "Apakah saya harus login untuk memantau pesanan?",
+    a: "Tidak selalu. Beberapa status pesanan dapat dipantau cukup dengan order ID dan resi, sehingga pengecekan tetap praktis meski tanpa login."
+  }
+];
+
+export default function FaqPage() {
+  return (
+    <div className="container py-12">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="surface-card p-8 md:p-10">
+          <div className="badge-chip">FAQ</div>
+          <h1 className="mt-5 text-4xl font-black tracking-tight text-slate-950 dark:text-white">Pertanyaan yang sering diajukan</h1>
+          <p className="mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300">
+            Ringkasan jawaban cepat untuk hal-hal yang paling sering ditanyakan pelanggan sebelum atau sesudah melakukan order.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((item) => (
+            <div key={item.q} className="surface-card p-6 md:p-8">
+              <h2 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">{item.q}</h2>
+              <p className="mt-3 text-sm leading-8 text-slate-600 dark:text-slate-300">{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

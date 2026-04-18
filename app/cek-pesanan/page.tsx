@@ -50,12 +50,12 @@ export default function OrderLookupPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr,0.92fr] lg:items-center">
             <div className="space-y-4">
               <div className="inline-flex rounded-full border border-amber-200 bg-amber-50/90 px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-amber-700 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-300">
-                Cek order tanpa login
+                Cek pesanan
               </div>
               <div>
-                <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-5xl dark:text-white">Masukkan resi untuk lihat status order</h1>
+                <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-5xl dark:text-white">Masukkan resi untuk melihat status pesanan</h1>
                 <p className="mt-3 max-w-2xl text-sm leading-8 text-slate-600 dark:text-slate-300">
-                  Buat guest maupun member, semuanya tetap bisa cek pesanan dari satu halaman yang simpel. Tidak perlu login dulu kalau cuma ingin memastikan status order sudah sampai mana.
+                  Gunakan resi pesanan untuk melihat status transaksi, detail pembayaran, dan informasi order terbaru dengan lebih praktis.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -80,9 +80,9 @@ export default function OrderLookupPage() {
             <div className="rounded-[32px] border border-slate-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
               <div className="text-xs font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">Langkah cepat</div>
               <ol className="mt-4 space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                <li>1. Ambil resi dari halaman pembayaran atau email bukti transaksi.</li>
+                <li>1. Ambil resi dari halaman pembayaran atau email konfirmasi transaksi.</li>
                 <li>2. Masukkan resi pada kolom di sebelah kiri.</li>
-                <li>3. Sistem akan menampilkan status terbaru dari server secara langsung.</li>
+                <li>3. Sistem akan menampilkan status terbaru pesanan secara otomatis.</li>
               </ol>
             </div>
           </div>

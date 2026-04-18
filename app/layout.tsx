@@ -8,7 +8,6 @@ import PromoPopup from "@/components/site/promo-popup";
 import NotificationPermission from "@/components/notification-permission";
 import ThemeScript from "@/components/theme-script";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,7 +38,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Footer />
         <NotificationPermission />
         <PromoPopup popup={popup as any} />
-        <Toaster richColors position="top-center" />
       </body>
     </html>
   );

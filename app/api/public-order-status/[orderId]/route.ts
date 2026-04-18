@@ -1,113 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getPakasirTransactionDetail, normalizePakasirStatus } from "@/lib/pakasir";
+import { fetchPakasirTransaction } from "@/lib/pakasir";
+import { fulfillProductOrder, settleWalletTopup } from "@/lib/fulfillment";
+import { buildDeliveryFields } from "@/lib/order-delivery";
 
-function extractPaymentPayload(...sources: any[]) {
-  for (const source of sources) {
-    if (!source) continue;
-    const qrString = String(source?.payment_qr_string || source?.qrString || source?.qr_string || source?.payment_number || "");
-    const qrUrl = String(source?.payment_qr_url || source?.qrUrl || source?.qr_url || "");
-    const deeplinkUrl = String(source?.payment_deeplink_url || source?.deeplinkUrl || "");
-    const paymentUrl = String(source?.payment_fallback_url || source?.paymentUrl || source?.payment_url || "");
-    const expiresAt = String(source?.payment_expires_at || source?.expiresAt || source?.expired_at || "");
-
-    if (qrString || qrUrl || deeplinkUrl || paymentUrl || expiresAt) {
-      return { qrString, qrUrl, deeplinkUrl, paymentUrl, expiresAt };
-    }
-  }
-
-  return { qrString: "", qrUrl: "", deeplinkUrl: "", paymentUrl: "", expiresAt: "" };
-}
-
-async function getLivePakasirStatus(orderId: string, amount: number) {
-  try {
-    const payload = await getPakasirTransactionDetail({ orderId, amount });
-    return { payload, error: null as string | null };
-  } catch (error: any) {
-    return { payload: null, error: String(error?.message || "Gagal mengambil status Pakasir.") };
-  }
-}
-
-export async function GET(request: Request, { params }: { params: { orderId: string } }) {
-  const orderId = String(params.orderId || "").trim();
-  const url = new URL(request.url);
-  const resi = String(url.searchParams.get("resi") || "").trim();
-  const type = String(url.searchParams.get("type") || "transaction").trim();
-
-  if (!orderId) return NextResponse.json({ error: "Order ID wajib diisi." }, { status: 400 });
-
-  const supabase = createServerSupabaseClient();
-  const admin = createAdminSupabaseClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (type === "topup") {
-    let query = admin
-      .from("wallet_topups")
-      .select("id, order_id, user_id, amount, status, public_order_code, gateway_payload, fulfillment_data, paid_at, created_at")
-      .eq("order_id", orderId)
-      .limit(1);
-
-    if (user) query = query.eq("user_id", user.id);
-    else query = query.eq("public_order_code", resi);
-
-    const { data } = await query.maybeSingle();
-    if (!data) return NextResponse.json({ error: "Transaksi top up tidak ditemukan." }, { status: 404 });
-
-    const liveTopup = String((data as any)?.status || "") === "pending"
-      ? await getLivePakasirStatus(orderId, Number((data as any)?.amount || 0))
-      : { payload: null, error: null as string | null };
-
-    const topupStatus = liveTopup.payload?.transaction
-      ? normalizePakasirStatus(liveTopup.payload.transaction.status)
-      : String((data as any)?.status || "pending");
-
-    if (liveTopup.payload?.transaction) {
-      await admin
-        .from("wallet_topups")
-        .update({
-          status: topupStatus,
-          paid_at: liveTopup.payload.transaction.completed_at || null,
-          gateway_name: "pakasir",
-          gateway_reference: String(liveTopup.payload.transaction.order_id || orderId),
-          gateway_payload: liveTopup.payload
-        })
-        .eq("id", (data as any).id);
-    }
-
-    const topupPayment = extractPaymentPayload((data as any)?.fulfillment_data, (data as any)?.gateway_payload);
-
-    if (topupStatus === "pending" && !topupPayment.qrString && !topupPayment.qrUrl) {
-      return NextResponse.json({
-        code: liveTopup.error ? "PAKASIR_STATUS_ERROR" : "QRIS_NOT_ACTIVE",
-        error: liveTopup.error ? "Status pembayaran Pakasir belum bisa dimuat." : "QRIS Belum Aktif",
-        message: liveTopup.error
-          ? `${liveTopup.error} Silakan cek konfigurasi PAKASIR_PROJECT_SLUG dan PAKASIR_API_KEY.`
-          : "Sistem belum menerima QRIS dinamis dari Pakasir untuk transaksi ini.",
-        orderId,
-        status: topupStatus
-      }, { status: liveTopup.error ? 502 : 424 });
-    }
-
-    return NextResponse.json({
-      type: "topup",
-      gateway: "pakasir",
-      orderId: (data as any)?.order_id,
-      status: topupStatus,
-      amount: Number((data as any)?.amount || 0),
-      publicOrderCode: (data as any)?.public_order_code,
-      qrUrl: topupPayment.qrUrl,
-      qrString: topupPayment.qrString,
-      deeplinkUrl: topupPayment.deeplinkUrl,
-      paymentUrl: topupPayment.paymentUrl,
-      expiresAt: topupPayment.expiresAt,
-      raw: liveTopup.payload || data
-    });
-  }
-
-  let query = admin
+async function getTransactionPayload(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string, resi: string) {
+  const { data: tx } = await admin
     .from("transactions")
     .select(`
       id,
@@ -115,88 +13,160 @@ export async function GET(request: Request, { params }: { params: { orderId: str
       user_id,
       status,
       amount,
-      discount_amount,
       final_amount,
       payment_method,
       public_order_code,
-      fulfillment_data,
-      gateway_payload,
-      paid_at,
-      created_at,
       buyer_name,
       buyer_email,
-      product_snapshot,
-      products ( id, name, image_url, category )
+      fulfillment_data,
+      created_at,
+      paid_at,
+      products ( name )
     `)
     .eq("order_id", orderId)
-    .limit(1);
+    .eq("public_order_code", resi)
+    .maybeSingle();
 
-  if (user) query = query.eq("user_id", user.id);
-  else query = query.eq("public_order_code", resi);
+  if (!tx) return null;
 
-  const { data } = await query.maybeSingle();
-  if (!data) return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
+  const { data: credential } = await admin
+    .from("app_credentials")
+    .select("account_data")
+    .eq("transaction_id", (tx as any).id)
+    .maybeSingle();
 
-  const liveTransaction = String((data as any)?.status || "") === "pending"
-    ? await getLivePakasirStatus(orderId, Number((data as any)?.final_amount || (data as any)?.amount || 0))
-    : { payload: null, error: null as string | null };
-
-  const effectiveStatus = liveTransaction.payload?.transaction
-    ? normalizePakasirStatus(liveTransaction.payload.transaction.status)
-    : String((data as any)?.status || "pending");
-
-  if (liveTransaction.payload?.transaction) {
-    await admin
-      .from("transactions")
-      .update({
-        status: effectiveStatus,
-        payment_method: String(liveTransaction.payload.transaction.payment_method || "qris").toLowerCase(),
-        paid_at: liveTransaction.payload.transaction.completed_at || null,
-        gateway_name: "pakasir",
-        gateway_reference: String(liveTransaction.payload.transaction.order_id || orderId),
-        gateway_payload: liveTransaction.payload
-      })
-      .eq("id", (data as any)?.id);
-  }
-
-  const product = Array.isArray((data as any)?.products) ? (data as any)?.products[0] : (data as any)?.products;
-  const payment = extractPaymentPayload((data as any)?.fulfillment_data, (data as any)?.gateway_payload);
-
-  if (effectiveStatus === "pending" && !payment.qrString && !payment.qrUrl) {
-    return NextResponse.json({
-      code: liveTransaction.error ? "PAKASIR_STATUS_ERROR" : "QRIS_NOT_ACTIVE",
-      error: liveTransaction.error ? "Status pembayaran Pakasir belum bisa dimuat." : "QRIS Belum Aktif",
-      message: liveTransaction.error
-        ? `${liveTransaction.error} Silakan cek konfigurasi PAKASIR_PROJECT_SLUG dan PAKASIR_API_KEY.`
-        : "Sistem belum menerima QRIS dinamis dari Pakasir untuk transaksi ini.",
-      orderId,
-      status: effectiveStatus
-    }, { status: liveTransaction.error ? 502 : 424 });
-  }
-
-  return NextResponse.json({
-    type: "transaction",
-    gateway: "pakasir",
-    orderId: (data as any)?.order_id,
-    status: effectiveStatus,
-    amount: Number((data as any)?.final_amount || (data as any)?.amount || 0),
-    publicOrderCode: (data as any)?.public_order_code,
-    qrUrl: payment.qrUrl,
-    qrString: payment.qrString,
-    deeplinkUrl: payment.deeplinkUrl,
-    paymentUrl: payment.paymentUrl,
-    expiresAt: payment.expiresAt,
-    productName: String(product?.name || (data as any)?.product_snapshot?.product_name || "Produk"),
-    productImage: String(product?.image_url || (data as any)?.product_snapshot?.product_image_url || ""),
-    variantName: String((data as any)?.product_snapshot?.variant_name || ""),
-    fulfillmentData: {
-      ...((data as any)?.fulfillment_data || {}),
-      payment_qr_url: payment.qrUrl || null,
-      payment_qr_string: payment.qrString || null,
-      payment_deeplink_url: payment.deeplinkUrl || null,
-      payment_fallback_url: payment.paymentUrl || null,
-      payment_expires_at: payment.expiresAt || null
-    },
-    raw: liveTransaction.payload || data
+  const product = Array.isArray((tx as any).products) ? (tx as any).products[0] : (tx as any).products;
+  const deliveryFields = buildDeliveryFields({
+    fulfillmentData: (tx as any).fulfillment_data || {},
+    credential
   });
+
+  return {
+    type: "transaction",
+    orderId: (tx as any).order_id,
+    resi: (tx as any).public_order_code,
+    status: (tx as any).status,
+    amount: Number((tx as any).final_amount || (tx as any).amount || 0),
+    productName: String(product?.name || "Pesanan"),
+    paymentMethod: (tx as any).payment_method || "qris",
+    buyerName: (tx as any).buyer_name || null,
+    buyerEmail: (tx as any).buyer_email || null,
+    createdAt: (tx as any).created_at || null,
+    paidAt: (tx as any).paid_at || null,
+    fulfillmentData: (tx as any).fulfillment_data || {},
+    credentialFields: deliveryFields,
+    hasCredential: deliveryFields.length > 0,
+    invoiceUrl: `/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(String((tx as any).public_order_code || ""))}`,
+    invoiceDownloadUrl: `/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(String((tx as any).public_order_code || ""))}&download=1`
+  };
+}
+
+async function getTopupPayload(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string) {
+  const { data: topup } = await admin
+    .from("wallet_topups")
+    .select("order_id, amount, status, created_at, settled_at")
+    .eq("order_id", orderId)
+    .maybeSingle();
+
+  if (!topup) return null;
+
+  return {
+    type: "topup",
+    orderId: (topup as any).order_id,
+    status: (topup as any).status,
+    amount: Number((topup as any).amount || 0),
+    paymentMethod: "qris",
+    createdAt: (topup as any).created_at || null,
+    paidAt: (topup as any).settled_at || null,
+    productName: "Top up saldo"
+  };
+}
+
+export async function GET(request: Request, { params }: { params: { orderId: string } }) {
+  try {
+    const orderId = String(params.orderId || "").trim();
+    const url = new URL(request.url);
+    const resi = String(url.searchParams.get("resi") || "").trim();
+    const explicitType = String(url.searchParams.get("type") || "").trim().toLowerCase();
+
+    if (!orderId) {
+      return NextResponse.json({ error: "Order ID wajib diisi." }, { status: 400 });
+    }
+
+    const admin = createAdminSupabaseClient();
+
+    if (explicitType === "transaction" && !resi) {
+      return NextResponse.json({ error: "Resi pesanan wajib diisi untuk cek transaksi." }, { status: 400 });
+    }
+
+    if (explicitType !== "topup") {
+      const liveTransaction = await fetchPakasirTransaction(orderId).catch(() => null);
+      if (liveTransaction?.status) {
+        const normalizedLiveStatus = String(liveTransaction.status).toLowerCase();
+
+        const { data: existingTx } = await admin
+          .from("transactions")
+          .select("id, status")
+          .eq("order_id", orderId)
+          .maybeSingle();
+
+        if (existingTx) {
+          const previousStatus = String((existingTx as any).status || "pending").toLowerCase();
+          if (previousStatus !== normalizedLiveStatus) {
+            await admin
+              .from("transactions")
+              .update({
+                status: normalizedLiveStatus,
+                paid_at: normalizedLiveStatus === "settlement" ? new Date().toISOString() : null,
+              })
+              .eq("id", (existingTx as any).id);
+          }
+
+          if (normalizedLiveStatus === "settlement") {
+            await fulfillProductOrder(orderId).catch(() => null);
+          }
+        } else {
+          const { data: existingTopup } = await admin
+            .from("wallet_topups")
+            .select("id, status")
+            .eq("order_id", orderId)
+            .maybeSingle();
+
+          if (existingTopup) {
+            const previousStatus = String((existingTopup as any).status || "pending").toLowerCase();
+            if (previousStatus !== normalizedLiveStatus) {
+              await admin
+                .from("wallet_topups")
+                .update({
+                  status: normalizedLiveStatus,
+                  settled_at: normalizedLiveStatus === "settlement" ? new Date().toISOString() : null,
+                })
+                .eq("id", (existingTopup as any).id);
+            }
+
+            if (normalizedLiveStatus === "settlement") {
+              await settleWalletTopup(orderId).catch(() => null);
+            }
+          }
+        }
+      }
+    }
+
+    const txPayload = resi ? await getTransactionPayload(admin, orderId, resi) : null;
+    if (txPayload) {
+      return NextResponse.json(txPayload, { status: 200 });
+    }
+
+    const topupPayload = await getTopupPayload(admin, orderId);
+    if (topupPayload) {
+      return NextResponse.json(topupPayload, { status: 200 });
+    }
+
+    return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Gagal memuat status pesanan." },
+      { status: 500 }
+    );
+  }
 }
