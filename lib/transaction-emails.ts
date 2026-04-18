@@ -4,8 +4,6 @@ import { SITE } from "@/lib/constants";
 import { generateInvoicePdf } from "@/lib/pdf";
 import { buildDeliveryFields, buildDeliveryText } from "@/lib/order-delivery";
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
-
 function wrapEmail(content: string) {
   return `
     <div style="margin:0;padding:32px;background:#020617;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e2e8f0;">
@@ -84,7 +82,6 @@ export async function sendTransactionPaidEmail(orderId: string) {
   const publicOrderCode = String((tx as any).public_order_code || "");
   const paymentMethod = String((tx as any).payment_method || "QRIS").toUpperCase();
   const total = Number((tx as any).final_amount || (tx as any).amount || 0);
-
   const deliveryFields = buildDeliveryFields({
     fulfillmentData: (tx as any).fulfillment_data || {},
     credential
@@ -95,53 +92,47 @@ export async function sendTransactionPaidEmail(orderId: string) {
     { label: "Resi", value: publicOrderCode || "-" },
     { label: "Produk", value: variantName ? `${productName} • ${variantName}` : productName },
     { label: "Pembayaran", value: paymentMethod },
-    {
-      label: "Total",
-      value: new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        maximumFractionDigits: 0
-      }).format(total)
-    },
+    { label: "Total", value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(total) },
     { label: "Status", value: String((tx as any).status || "settlement").toUpperCase() }
   ];
 
-  const deliverySection =
-    deliveryFields.length > 0
-      ? `
+  const deliverySection = deliveryFields.length > 0
+    ? `
       <div style="margin-top:24px;">
         <div style="font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:#facc15;font-weight:800;">Data layanan</div>
         <div style="margin-top:10px;font-size:14px;line-height:1.75;color:#cbd5e1;">Berikut data akses yang sudah siap dipakai. Simpan baik-baik dan jangan dibagikan ke pihak lain.</div>
         <div style="margin-top:16px;">${infoGrid(deliveryFields)}</div>
       </div>
     `
-      : `
+    : `
       <div style="margin-top:24px;border:1px solid rgba(148,163,184,0.16);border-radius:20px;padding:18px 20px;background:rgba(15,23,42,0.56);">
         <div style="font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:#facc15;font-weight:800;">Status layanan</div>
         <div style="margin-top:10px;font-size:14px;line-height:1.75;color:#cbd5e1;">Pembayaran sudah tervalidasi. Silakan gunakan resi untuk memantau perkembangan pesanan di website kapan saja.</div>
       </div>
     `;
 
-  const manageUrl = `${APP_URL}/waiting-payment/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&type=transaction`;
-const invoiceUrl = `${APP_URL}/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&download=1`;
+  const manageUrl = `${SITE.url}/waiting-payment/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&type=transaction`;
+  const invoiceUrl = `${SITE.url}/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&download=1`;
 
-const credentialText =
-  deliveryFields.length > 0
-    ? deliveryFields.map((field) => `${field.label}: ${field.value}`).join("\n")
-    : null;
-
-const pdfBytes = await generateInvoicePdf({
-  orderId: String((tx as any).order_id),
-  customerName: displayName,
-  productName: variantName ? `${productName} • ${variantName}` : productName,
-  amount: Number((tx as any).amount || 0),
-  discountAmount: Number((tx as any).discount_amount || 0),
-  finalAmount: Number((tx as any).final_amount || (tx as any).amount || 0),
-  status: String((tx as any).status || "settlement"),
-  createdAt: String((tx as any).created_at || new Date().toISOString()),
-  credential: credentialText,
-  couponCode: null
-});
+  const pdfBytes = await generateInvoicePdf({
+    orderId: String((tx as any).order_id),
+    resi: publicOrderCode || "-",
+    customerName: displayName,
+    customerEmail: buyerEmail,
+    productName,
+    variantName,
+    category,
+    paymentMethod,
+    status: String((tx as any).status || "settlement"),
+    createdAt: String((tx as any).created_at || new Date().toISOString()),
+    paidAt: (tx as any).paid_at ? String((tx as any).paid_at) : null,
+    subtotal: Number((tx as any).amount || 0),
+    discount: Number((tx as any).discount_amount || 0),
+    total,
+    credential: deliveryFields.length > 0
+      ? Object.fromEntries(deliveryFields.map((field) => [field.label, field.value]))
+      : undefined
+  });
 
   const html = wrapEmail(`
     <div style="font-size:15px;line-height:1.8;color:#e2e8f0;">
@@ -166,18 +157,12 @@ const pdfBytes = await generateInvoicePdf({
     `Resi: ${publicOrderCode || "-"}`,
     `Produk: ${variantName ? `${productName} - ${variantName}` : productName}`,
     `Pembayaran: ${paymentMethod}`,
-    `Total: ${new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0
-    }).format(total)}`,
+    `Total: ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(total)}`,
     "",
-    deliveryFields.length > 0
-      ? buildDeliveryText(deliveryFields)
-      : "Silakan cek detail pesanan melalui tautan web untuk melihat perkembangan order terbaru.",
+    deliveryFields.length > 0 ? buildDeliveryText(deliveryFields) : "Silakan cek detail pesanan melalui tautan web untuk melihat perkembangan order terbaru.",
     "",
     `Detail pesanan: ${manageUrl}`,
-    `Invoice: ${invoiceUrl}`
+    `Invoice: ${invoiceUrl}`,
   ].join("\n");
 
   await sendMail({
@@ -194,17 +179,13 @@ const pdfBytes = await generateInvoicePdf({
     ]
   });
 
-  await admin
-    .from("transactions")
-    .update({ email_sent_at: new Date().toISOString() })
-    .eq("id", (tx as any).id);
+  await admin.from("transactions").update({ email_sent_at: new Date().toISOString() }).eq("id", (tx as any).id);
 
   return { sent: true, to: buyerEmail, hasCredential: deliveryFields.length > 0 };
 }
 
 export async function sendTopupPaidEmail(orderId: string) {
   const admin = createAdminSupabaseClient();
-
   const { data: topup } = await admin
     .from("wallet_topups")
     .select("id, order_id, amount, status, user_id, email_sent_at")
@@ -226,11 +207,7 @@ export async function sendTopupPaidEmail(orderId: string) {
 
   await sendMail({
     to: targetEmail,
-    subject: `Top up saldo berhasil • ${new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0
-    }).format(amount)}`,
+    subject: `Top up saldo berhasil • ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount)}`,
     text: `Top up saldo berhasil. Order ID: ${(topup as any).order_id}. Nominal: ${amount}.`,
     html: wrapEmail(`
       <div style="font-size:15px;line-height:1.8;color:#e2e8f0;">
@@ -238,23 +215,12 @@ export async function sendTopupPaidEmail(orderId: string) {
       </div>
       <div style="margin-top:22px;">${infoGrid([
         { label: "Order ID", value: String((topup as any).order_id) },
-        {
-          label: "Nominal",
-          value: new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            maximumFractionDigits: 0
-          }).format(amount)
-        },
+        { label: "Nominal", value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount) },
         { label: "Status", value: String((topup as any).status || "settlement").toUpperCase() }
       ])}</div>
     `)
   });
 
-  await admin
-    .from("wallet_topups")
-    .update({ email_sent_at: new Date().toISOString() })
-    .eq("id", (topup as any).id);
-
+  await admin.from("wallet_topups").update({ email_sent_at: new Date().toISOString() }).eq("id", (topup as any).id);
   return { sent: true };
 }
