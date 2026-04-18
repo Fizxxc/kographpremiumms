@@ -162,7 +162,7 @@ export default async function AdminPage() {
         <BulkCredentialUpload products={((products || []).filter((item: any) => item.service_type !== "pterodactyl")) as any} />
         <ProductManager products={(products || []) as any} />
         <VariantManager products={(products || []) as any} variants={(variants || []) as any} />
-        <CouponManager coupons={(coupons || []) as any} />
+        <CouponManager initialCoupons={(coupons || []) as any} />
         <BroadcastPanel />
         <SiteSettingsManager popups={(popups || []) as any} alerts={(alerts || []) as any} />
         <LiveChatAdminPanel />

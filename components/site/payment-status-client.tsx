@@ -19,8 +19,8 @@ import { formatRupiah } from "@/lib/utils";
 
 type PaymentStatusClientProps = {
   orderId: string;
-  resi: string;
-  type: string;
+  resi?: string;
+  type?: string;
 };
 
 type CredentialField = {
@@ -345,3 +345,6 @@ export function PaymentStatusClient({ orderId, resi, type }: PaymentStatusClient
     </div>
   );
 }
+
+
+export default PaymentStatusClient;

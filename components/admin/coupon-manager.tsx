@@ -4,9 +4,7 @@ import { useMemo, useState } from "react";
 import { BadgePercent, Plus, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
@@ -88,15 +86,14 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
           </div>
           <div className="space-y-2">
             <label className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Tipe diskon</label>
-            <Select value={type} onValueChange={(value) => setType(value as "percentage" | "fixed")}>
-              <SelectTrigger className="border-white/10 bg-white/5 text-slate-100">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="percentage">Percentage</SelectItem>
-                <SelectItem value="fixed">Nominal tetap</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as "percentage" | "fixed")}
+              className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 outline-none transition focus:border-brand-300"
+            >
+              <option value="percentage" className="bg-slate-900 text-slate-100">Percentage</option>
+              <option value="fixed" className="bg-slate-900 text-slate-100">Nominal tetap</option>
+            </select>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Nilai diskon</label>
@@ -116,10 +113,15 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3 rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-          <Checkbox checked={active} onCheckedChange={(value) => setActive(Boolean(value))} />
+        <label className="mt-4 flex items-center gap-3 rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+            className="h-4 w-4 rounded border-white/10 bg-white/5 accent-amber-400"
+          />
           <span>Aktifkan kupon setelah disimpan</span>
-        </div>
+        </label>
 
         <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/30 p-4 text-sm leading-6 text-slate-300">
           <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Preview promo</div>

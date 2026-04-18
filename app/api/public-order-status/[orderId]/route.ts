@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { fetchPakasirTransaction } from "@/lib/pakasir";
+import { getPakasirTransactionDetail, normalizePakasirStatus } from "@/lib/pakasir";
 import { fulfillProductOrder, settleWalletTopup } from "@/lib/fulfillment";
 import { buildDeliveryFields } from "@/lib/order-delivery";
 
@@ -82,6 +82,71 @@ async function getTopupPayload(admin: ReturnType<typeof createAdminSupabaseClien
   };
 }
 
+async function syncLiveStatus(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string) {
+  const { data: existingTx } = await admin
+    .from("transactions")
+    .select("id, status, amount, final_amount")
+    .eq("order_id", orderId)
+    .maybeSingle();
+
+  if (existingTx) {
+    const live = await getPakasirTransactionDetail({
+      orderId,
+      amount: Number((existingTx as any).final_amount || (existingTx as any).amount || 0)
+    }).catch(() => null);
+
+    const liveStatus = normalizePakasirStatus((live as any)?.transaction?.status);
+    if (!liveStatus) return;
+
+    const previousStatus = normalizePakasirStatus((existingTx as any).status || "pending");
+    if (previousStatus !== liveStatus) {
+      await admin
+        .from("transactions")
+        .update({
+          status: liveStatus,
+          paid_at: liveStatus === "settlement" ? new Date().toISOString() : null
+        })
+        .eq("id", (existingTx as any).id);
+    }
+
+    if (liveStatus === "settlement") {
+      await fulfillProductOrder(orderId).catch(() => null);
+    }
+    return;
+  }
+
+  const { data: existingTopup } = await admin
+    .from("wallet_topups")
+    .select("id, status, amount")
+    .eq("order_id", orderId)
+    .maybeSingle();
+
+  if (!existingTopup) return;
+
+  const live = await getPakasirTransactionDetail({
+    orderId,
+    amount: Number((existingTopup as any).amount || 0)
+  }).catch(() => null);
+
+  const liveStatus = normalizePakasirStatus((live as any)?.transaction?.status);
+  if (!liveStatus) return;
+
+  const previousStatus = normalizePakasirStatus((existingTopup as any).status || "pending");
+  if (previousStatus !== liveStatus) {
+    await admin
+      .from("wallet_topups")
+      .update({
+        status: liveStatus,
+        settled_at: liveStatus === "settlement" ? new Date().toISOString() : null
+      })
+      .eq("id", (existingTopup as any).id);
+  }
+
+  if (liveStatus === "settlement") {
+    await settleWalletTopup(orderId).catch(() => null);
+  }
+}
+
 export async function GET(request: Request, { params }: { params: { orderId: string } }) {
   try {
     const orderId = String(params.orderId || "").trim();
@@ -100,56 +165,7 @@ export async function GET(request: Request, { params }: { params: { orderId: str
     }
 
     if (explicitType !== "topup") {
-      const liveTransaction = await fetchPakasirTransaction(orderId).catch(() => null);
-      if (liveTransaction?.status) {
-        const normalizedLiveStatus = String(liveTransaction.status).toLowerCase();
-
-        const { data: existingTx } = await admin
-          .from("transactions")
-          .select("id, status")
-          .eq("order_id", orderId)
-          .maybeSingle();
-
-        if (existingTx) {
-          const previousStatus = String((existingTx as any).status || "pending").toLowerCase();
-          if (previousStatus !== normalizedLiveStatus) {
-            await admin
-              .from("transactions")
-              .update({
-                status: normalizedLiveStatus,
-                paid_at: normalizedLiveStatus === "settlement" ? new Date().toISOString() : null,
-              })
-              .eq("id", (existingTx as any).id);
-          }
-
-          if (normalizedLiveStatus === "settlement") {
-            await fulfillProductOrder(orderId).catch(() => null);
-          }
-        } else {
-          const { data: existingTopup } = await admin
-            .from("wallet_topups")
-            .select("id, status")
-            .eq("order_id", orderId)
-            .maybeSingle();
-
-          if (existingTopup) {
-            const previousStatus = String((existingTopup as any).status || "pending").toLowerCase();
-            if (previousStatus !== normalizedLiveStatus) {
-              await admin
-                .from("wallet_topups")
-                .update({
-                  status: normalizedLiveStatus,
-                  settled_at: normalizedLiveStatus === "settlement" ? new Date().toISOString() : null,
-                })
-                .eq("id", (existingTopup as any).id);
-            }
-
-            if (normalizedLiveStatus === "settlement") {
-              await settleWalletTopup(orderId).catch(() => null);
-            }
-          }
-        }
-      }
+      await syncLiveStatus(admin, orderId).catch(() => null);
     }
 
     const txPayload = resi ? await getTransactionPayload(admin, orderId, resi) : null;

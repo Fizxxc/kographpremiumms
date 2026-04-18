@@ -24,23 +24,24 @@ export async function GET(request: Request, { params }: { params: { orderId: str
     let query = admin
       .from("transactions")
       .select(`
-        id,
-        order_id,
-        user_id,
-        status,
-        amount,
-        discount_amount,
-        final_amount,
-        payment_method,
-        created_at,
-        paid_at,
-        public_order_code,
-        buyer_name,
-        buyer_email,
-        fulfillment_data,
-        product_snapshot,
-        products ( name, category )
-      `)
+         id,
+         order_id,
+          user_id,
+          status,
+          amount,
+          discount_amount,
+          final_amount,
+          coupon_code,
+          payment_method,
+          created_at,
+          paid_at,
+          public_order_code,
+          buyer_name,
+          buyer_email,
+          fulfillment_data,
+          product_snapshot,
+          products ( name, category )
+          `)
       .eq("order_id", orderId)
       .limit(1);
 
@@ -68,24 +69,22 @@ export async function GET(request: Request, { params }: { params: { orderId: str
       credential
     });
 
+    const credentialText =
+      deliveryFields.length > 0
+        ? deliveryFields.map((field) => `${field.label}: ${field.value}`).join("\n")
+        : null;
+
     const pdfBytes = await generateInvoicePdf({
       orderId: String((tx as any).order_id),
-      resi: String((tx as any).public_order_code || "-"),
       customerName: String((tx as any).buyer_name || "Customer"),
-      customerEmail: String((tx as any).buyer_email || "-"),
       productName: String(product?.name || (tx as any).product_snapshot?.product_name || "Produk"),
-      variantName: String((tx as any).product_snapshot?.variant_name || ""),
-      category: String(product?.category || (tx as any).product_snapshot?.category || "Layanan Digital"),
-      paymentMethod: String((tx as any).payment_method || "QRIS").toUpperCase(),
+      amount: Number((tx as any).amount || 0),
+      discountAmount: Number((tx as any).discount_amount || 0),
+      finalAmount: Number((tx as any).final_amount || (tx as any).amount || 0),
       status: String((tx as any).status || "pending"),
       createdAt: String((tx as any).created_at || new Date().toISOString()),
-      paidAt: (tx as any).paid_at ? String((tx as any).paid_at) : null,
-      subtotal: Number((tx as any).amount || 0),
-      discount: Number((tx as any).discount_amount || 0),
-      total: Number((tx as any).final_amount || (tx as any).amount || 0),
-      credential: deliveryFields.length > 0
-        ? Object.fromEntries(deliveryFields.map((field) => [field.label, field.value]))
-        : undefined
+      credential: credentialText,
+      couponCode: (tx as any).coupon_code ? String((tx as any).coupon_code) : null
     });
 
     const safeFilename = `${String((tx as any).order_id).replace(/[^a-zA-Z0-9-_]/g, "_")}-invoice.pdf`;

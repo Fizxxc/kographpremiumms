@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { DatabaseZap, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -74,31 +72,29 @@ export function BulkCredentialUpload({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <label className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Produk</label>
-          <Select value={productId} onValueChange={setProductId}>
-            <SelectTrigger className="border-white/10 bg-white/5 text-slate-100">
-              <SelectValue placeholder="Pilih produk" />
-            </SelectTrigger>
-            <SelectContent>
-              {products.map((product) => (
-                <SelectItem key={product.id} value={product.id}>
-                  {product.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 outline-none transition focus:border-brand-300"
+          >
+            {products.map((product) => (
+              <option key={product.id} value={product.id} className="bg-slate-900 text-slate-100">
+                {product.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-2">
           <label className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Format</label>
-          <Select value={format} onValueChange={(value) => setFormat(value as "txt" | "csv")}>
-            <SelectTrigger className="border-white/10 bg-white/5 text-slate-100">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="txt">TXT / key:value</SelectItem>
-              <SelectItem value="csv">CSV / comma separated</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value as "txt" | "csv")}
+            className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-slate-100 outline-none transition focus:border-brand-300"
+          >
+            <option value="txt" className="bg-slate-900 text-slate-100">TXT / key:value</option>
+            <option value="csv" className="bg-slate-900 text-slate-100">CSV / comma separated</option>
+          </select>
         </div>
       </div>
 
