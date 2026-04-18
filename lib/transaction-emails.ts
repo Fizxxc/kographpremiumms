@@ -4,6 +4,8 @@ import { SITE } from "@/lib/constants";
 import { generateInvoicePdf } from "@/lib/pdf";
 import { buildDeliveryFields, buildDeliveryText } from "@/lib/order-delivery";
 
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://kographpremiapp.vercel.app").replace(/\/$/, "");
+
 function wrapEmail(content: string) {
   return `
     <div style="margin:0;padding:32px;background:#020617;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e2e8f0;">
@@ -23,15 +25,15 @@ function infoGrid(items: Array<{ label: string; value: string }>) {
   return `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
       ${items
-        .map(
-          (item) => `
+      .map(
+        (item) => `
             <div style="border:1px solid rgba(148,163,184,0.16);border-radius:20px;padding:16px 18px;background:rgba(15,23,42,0.56);">
               <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;font-weight:800;">${item.label}</div>
               <div style="margin-top:8px;font-size:14px;line-height:1.65;color:#f8fafc;font-weight:700;word-break:break-word;">${item.value}</div>
             </div>
           `
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
   `;
 }
@@ -111,29 +113,27 @@ export async function sendTransactionPaidEmail(orderId: string) {
       </div>
     `;
 
-  const manageUrl = `${SITE.url}/waiting-payment/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&type=transaction`;
-  const invoiceUrl = `${SITE.url}/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&download=1`;
+  const manageUrl = `${APP_URL}/waiting-payment/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&type=transaction`;
+  const invoiceUrl = `${APP_URL}/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(publicOrderCode)}&download=1`;
+
+  const credentialText =
+    deliveryFields.length > 0
+      ? deliveryFields.map((field) => `${field.label}: ${field.value}`).join("\n")
+      : null;
 
   const pdfBytes = await generateInvoicePdf({
     orderId: String((tx as any).order_id),
-    resi: publicOrderCode || "-",
     customerName: displayName,
-    customerEmail: buyerEmail,
-    productName,
-    variantName,
-    category,
-    paymentMethod,
+    productName: variantName ? `${productName} • ${variantName}` : productName,
+    amount: Number((tx as any).amount || 0),
+    discountAmount: Number((tx as any).discount_amount || 0),
+    finalAmount: total,
     status: String((tx as any).status || "settlement"),
     createdAt: String((tx as any).created_at || new Date().toISOString()),
-    paidAt: (tx as any).paid_at ? String((tx as any).paid_at) : null,
-    subtotal: Number((tx as any).amount || 0),
-    discount: Number((tx as any).discount_amount || 0),
-    total,
-    credential: deliveryFields.length > 0
-      ? Object.fromEntries(deliveryFields.map((field) => [field.label, field.value]))
-      : undefined
+    credential: credentialText,
+    couponCode: null
   });
-
+  
   const html = wrapEmail(`
     <div style="font-size:15px;line-height:1.8;color:#e2e8f0;">
       Halo ${displayName}, pesanan Anda telah kami catat dengan baik dan saat ini sudah siap digunakan.
@@ -214,10 +214,10 @@ export async function sendTopupPaidEmail(orderId: string) {
         Halo ${String((profile as any)?.full_name || "Kak")}, top up saldo Anda sudah berhasil diproses.
       </div>
       <div style="margin-top:22px;">${infoGrid([
-        { label: "Order ID", value: String((topup as any).order_id) },
-        { label: "Nominal", value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount) },
-        { label: "Status", value: String((topup as any).status || "settlement").toUpperCase() }
-      ])}</div>
+      { label: "Order ID", value: String((topup as any).order_id) },
+      { label: "Nominal", value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount) },
+      { label: "Status", value: String((topup as any).status || "settlement").toUpperCase() }
+    ])}</div>
     `)
   });
 

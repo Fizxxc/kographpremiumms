@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SITE } from "@/lib/constants";
 import { CheckCircle2, Copy, ExternalLink, Loader2, MessageCircleMore, QrCode, RefreshCw, Wallet } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 type WaitingPaymentClientProps = {
   transaction: any;
@@ -37,17 +37,16 @@ export function WaitingPaymentClient({ transaction, product, credential }: Waiti
     ? `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(qrString)}`
     : "";
 
-  const panelInfoText = useMemo(() => {
-    if (!fulfillmentData) return "";
-    return [
-      `Panel URL: ${fulfillmentData.panel_url || "-"}`,
-      `Username: ${fulfillmentData.panel_username || "-"}`,
-      `Email: ${fulfillmentData.panel_email || "-"}`,
-      `Password: ${fulfillmentData.panel_password || "-"}`,
-      `Server UUID: ${fulfillmentData.server_uuid || "-"}`
-    ].join("
-");
-  }, [fulfillmentData]);
+const panelInfoText = useMemo(() => {
+  if (!fulfillmentData) return "";
+  return [
+    `Panel URL: ${fulfillmentData.panel_url || "-"}`,
+    `Username: ${fulfillmentData.panel_username || "-"}`,
+    `Email: ${fulfillmentData.panel_email || "-"}`,
+    `Password: ${fulfillmentData.panel_password || "-"}`,
+    `Server UUID: ${fulfillmentData.server_uuid || "-"}`
+  ].join("\\n");
+}, [fulfillmentData]);
 
   useEffect(() => {
     if (status === "settlement") return;

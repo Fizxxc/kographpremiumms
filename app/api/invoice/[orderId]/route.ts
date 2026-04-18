@@ -9,7 +9,9 @@ export async function GET(request: Request, { params }: { params: { orderId: str
     const orderId = String(params.orderId || "").trim();
     const url = new URL(request.url);
     const resi = String(url.searchParams.get("resi") || "").trim();
-    const forceDownload = ["1", "true", "yes"].includes(String(url.searchParams.get("download") || "").toLowerCase());
+    const forceDownload = ["1", "true", "yes"].includes(
+      String(url.searchParams.get("download") || "").toLowerCase()
+    );
 
     if (!orderId) {
       return NextResponse.json({ error: "Order ID wajib diisi." }, { status: 400 });
@@ -17,6 +19,7 @@ export async function GET(request: Request, { params }: { params: { orderId: str
 
     const supabase = createServerSupabaseClient();
     const admin = createAdminSupabaseClient();
+
     const {
       data: { user }
     } = await supabase.auth.getUser();
@@ -31,9 +34,7 @@ export async function GET(request: Request, { params }: { params: { orderId: str
         amount,
         discount_amount,
         final_amount,
-        payment_method,
         created_at,
-        paid_at,
         public_order_code,
         buyer_name,
         buyer_email,
@@ -44,10 +45,15 @@ export async function GET(request: Request, { params }: { params: { orderId: str
       .eq("order_id", orderId)
       .limit(1);
 
-    if (user?.id) query = query.eq("user_id", user.id);
-    else if (resi) query = query.eq("public_order_code", resi);
-    else {
-      return NextResponse.json({ error: "Akses invoice memerlukan login atau resi pesanan." }, { status: 401 });
+    if (user?.id) {
+      query = query.eq("user_id", user.id);
+    } else if (resi) {
+      query = query.eq("public_order_code", resi);
+    } else {
+      return NextResponse.json(
+        { error: "Akses invoice memerlukan login atau resi pesanan." },
+        { status: 401 }
+      );
     }
 
     const { data: tx, error } = await query.maybeSingle();
@@ -62,33 +68,39 @@ export async function GET(request: Request, { params }: { params: { orderId: str
       .eq("transaction_id", (tx as any).id)
       .maybeSingle();
 
-    const product = Array.isArray((tx as any).products) ? (tx as any).products[0] : (tx as any).products;
+    const product = Array.isArray((tx as any).products)
+      ? (tx as any).products[0]
+      : (tx as any).products;
+
     const deliveryFields = buildDeliveryFields({
       fulfillmentData: (tx as any).fulfillment_data || {},
       credential
     });
 
+    const credentialText =
+      deliveryFields.length > 0
+        ? deliveryFields.map((field) => `${field.label}: ${field.value}`).join("\n")
+        : null;
+
     const pdfBytes = await generateInvoicePdf({
       orderId: String((tx as any).order_id),
-      resi: String((tx as any).public_order_code || "-"),
       customerName: String((tx as any).buyer_name || "Customer"),
-      customerEmail: String((tx as any).buyer_email || "-"),
-      productName: String(product?.name || (tx as any).product_snapshot?.product_name || "Produk"),
-      variantName: String((tx as any).product_snapshot?.variant_name || ""),
-      category: String(product?.category || (tx as any).product_snapshot?.category || "Layanan Digital"),
-      paymentMethod: String((tx as any).payment_method || "QRIS").toUpperCase(),
+      productName: String(
+        product?.name || (tx as any).product_snapshot?.product_name || "Produk"
+      ),
+      amount: Number((tx as any).amount || 0),
+      discountAmount: Number((tx as any).discount_amount || 0),
+      finalAmount: Number((tx as any).final_amount || (tx as any).amount || 0),
       status: String((tx as any).status || "pending"),
       createdAt: String((tx as any).created_at || new Date().toISOString()),
-      paidAt: (tx as any).paid_at ? String((tx as any).paid_at) : null,
-      subtotal: Number((tx as any).amount || 0),
-      discount: Number((tx as any).discount_amount || 0),
-      total: Number((tx as any).final_amount || (tx as any).amount || 0),
-      credential: deliveryFields.length > 0
-        ? Object.fromEntries(deliveryFields.map((field) => [field.label, field.value]))
-        : undefined
+      credential: credentialText,
+      couponCode: null
     });
 
-    const safeFilename = `${String((tx as any).order_id).replace(/[^a-zA-Z0-9-_]/g, "_")}-invoice.pdf`;
+    const safeFilename = `${String((tx as any).order_id).replace(
+      /[^a-zA-Z0-9-_]/g,
+      "_"
+    )}-invoice.pdf`;
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
@@ -99,6 +111,9 @@ export async function GET(request: Request, { params }: { params: { orderId: str
       }
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Gagal membuat invoice PDF." }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || "Gagal membuat invoice PDF." },
+      { status: 500 }
+    );
   }
 }
