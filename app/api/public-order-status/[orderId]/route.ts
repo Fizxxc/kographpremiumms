@@ -12,7 +12,7 @@ async function findStatusRow(input: {
   orderId: string;
   publicOrderCode?: string | null;
   explicitType?: "transaction" | "topup" | null;
-}) {
+}): Promise<StatusLookupResult | null> {
   const admin = createAdminSupabaseClient();
   const orderId = input.orderId.trim();
   const publicOrderCode = input.publicOrderCode?.trim() || null;
@@ -55,15 +55,24 @@ async function findStatusRow(input: {
   return (await findTransaction()) || (await findTopup());
 }
 
-export async function GET(request: Request, { params }: { params: { orderId: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { orderId: string } }
+) {
   try {
     const url = new URL(request.url);
     const orderId = String(params.orderId || "").trim();
-    const publicOrderCode = String(url.searchParams.get("resi") || "").trim() || null;
-    const explicitType = (url.searchParams.get("type") || "").trim() as "transaction" | "topup" | "";
+    const publicOrderCode =
+      String(url.searchParams.get("resi") || "").trim() || null;
+    const explicitType = (
+      url.searchParams.get("type") || ""
+    ).trim() as "transaction" | "topup" | "";
 
     if (!orderId) {
-      return NextResponse.json({ error: "Order ID wajib diisi." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Order ID wajib diisi." },
+        { status: 400 }
+      );
     }
 
     const found = await findStatusRow({
@@ -92,68 +101,101 @@ export async function GET(request: Request, { params }: { params: { orderId: str
       explicitType: found.kind
     });
 
+    const kind = refreshed?.kind || found.kind;
     const row = refreshed?.row || found.row;
     const fulfillment = (row as any).fulfillment_data || {};
-    const amount = Number((row as any).final_amount || (row as any).amount || fulfillment.payment_total_amount || 0);
-    let gatewayPayload = fulfillment.provider_response || fulfillment.gateway_payload || null;
+    const amount = Number(
+      (row as any).final_amount ||
+        (row as any).amount ||
+        fulfillment.payment_total_amount ||
+        0
+    );
+
+    let gatewayPayload =
+      fulfillment.provider_response || fulfillment.gateway_payload || null;
 
     try {
-      const pakasir = await getPakasirTransactionDetail({
-        orderId,
-        amount: amount > 0 ? amount : undefined
-      });
+      if (amount > 0) {
+        const pakasir = await getPakasirTransactionDetail({
+          orderId,
+          amount
+        });
 
-      if (pakasir?.data) {
-        gatewayPayload = pakasir.data;
+        if (pakasir?.data) {
+          gatewayPayload = pakasir.data;
+        }
       }
     } catch {
-      // Tetap tampilkan data lokal bila request ke Pakasir gagal.
+      // tetap pakai data lokal kalau request ke Pakasir gagal
     }
 
     const paymentStatus = String(
-      gatewayPayload?.payment_status || gatewayPayload?.paymentStatus || fulfillment.payment_status || (row as any).status || "pending"
+      gatewayPayload?.payment_status ||
+        gatewayPayload?.paymentStatus ||
+        fulfillment.payment_status ||
+        (row as any).status ||
+        "pending"
     ).toLowerCase();
 
     const normalizedStatus = ["settlement", "paid", "success", "berhasil"].includes(paymentStatus)
       ? "success"
       : ["expire", "expired", "cancel", "cancelled", "failed"].includes(paymentStatus)
-        ? "failed"
-        : "pending";
+      ? "failed"
+      : "pending";
 
     return NextResponse.json({
       ok: true,
-      kind: found.kind,
+      kind,
       orderId,
       publicOrderCode: (row as any).public_order_code || publicOrderCode,
       status: normalizedStatus,
       rawStatus: paymentStatus,
       amount,
-      buyerName: found.kind === "transaction" ? (row as any).buyer_name || null : null,
-      buyerEmail: found.kind === "transaction" ? (row as any).buyer_email || null : null,
-      productSnapshot: found.kind === "transaction" ? (row as any).product_snapshot || null : null,
-      variantName: found.kind === "transaction" ? (row as any).variant_name || null : null,
+      buyerName: kind === "transaction" ? (row as any).buyer_name || null : null,
+      buyerEmail: kind === "transaction" ? (row as any).buyer_email || null : null,
+      productSnapshot:
+        kind === "transaction" ? (row as any).product_snapshot || null : null,
+      variantName: kind === "transaction" ? (row as any).variant_name || null : null,
       qrString:
         gatewayPayload?.qr_content ||
         gatewayPayload?.qr_string ||
         gatewayPayload?.qris_content ||
         fulfillment.payment_qr_string ||
         null,
-      qrUrl: gatewayPayload?.qr_url || gatewayPayload?.qr_image || gatewayPayload?.qris_url || fulfillment.payment_qr_url || null,
-      paymentNumber: gatewayPayload?.payment_no || gatewayPayload?.payment_number || fulfillment.payment_number || null,
-      expiresAt: gatewayPayload?.expired_at || gatewayPayload?.expires_at || fulfillment.payment_expires_at || null,
+      qrUrl:
+        gatewayPayload?.qr_url ||
+        gatewayPayload?.qr_image ||
+        gatewayPayload?.qris_url ||
+        fulfillment.payment_qr_url ||
+        null,
+      paymentNumber:
+        gatewayPayload?.payment_no ||
+        gatewayPayload?.payment_number ||
+        fulfillment.payment_number ||
+        null,
+      expiresAt:
+        gatewayPayload?.expired_at ||
+        gatewayPayload?.expires_at ||
+        fulfillment.payment_expires_at ||
+        null,
       paymentUrl: fulfillment.payment_fallback_url || null,
       credentialStatus: fulfillment.delivery_status || null,
       updatedAt: (row as any).updated_at || null,
       message:
         normalizedStatus === "success"
-          ? found.kind === "topup"
+          ? kind === "topup"
             ? "Pembayaran berhasil dan saldo sedang diproses ke akun Anda."
             : "Pembayaran berhasil dan pesanan Anda sedang diproses."
           : normalizedStatus === "failed"
-            ? "Transaksi sudah tidak dapat diproses. Silakan buat pembayaran baru bila dibutuhkan."
-            : "Pembayaran masih menunggu verifikasi."
+          ? "Transaksi sudah tidak dapat diproses. Silakan buat pembayaran baru bila dibutuhkan."
+          : "Pembayaran masih menunggu verifikasi."
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Gagal mengambil status pesanan." }, { status: 500 });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Gagal mengambil status pesanan.";
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

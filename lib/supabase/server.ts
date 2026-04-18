@@ -31,3 +31,4 @@ export function createServerSupabaseClient() {
     }
   );
 }
+export const getSupabaseServerClient = createServerSupabaseClient;
