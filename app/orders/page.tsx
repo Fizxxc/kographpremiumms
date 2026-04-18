@@ -1,154 +1,164 @@
 import Link from "next/link";
-import { Download, ExternalLink, ServerCog, Wallet } from "lucide-react";
-import { requireUser } from "@/lib/auth";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { RealtimeStatusBadge } from "@/components/status/realtime-status-badge";
-import { formatDate, formatRupiah } from "@/lib/utils";
+import { redirect } from "next/navigation";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { formatRupiah } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
-  const user = await requireUser();
-  const supabase = createServerSupabaseClient();
+  const supabase = getSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-  const { data: orders } = await supabase
-    .from("transactions")
-    .select(
-      `
-      id,
-      order_id,
-      status,
-      amount,
-      discount_amount,
-      final_amount,
-      coupon_code,
-      status_token,
-      payment_method,
-      fulfillment_data,
-      created_at,
-      products ( id, name, category, image_url, service_type ),
-      app_credentials ( account_data )
-    `
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  if (!user) {
+    redirect("/login?next=/orders");
+  }
+
+  const [transactionsRes, topupsRes] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("id, order_id, public_order_code, status, final_amount, created_at, buyer_name, buyer_email, product_snapshot, variant_name, fulfillment_data")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("wallet_topups")
+      .select("id, order_id, public_order_code, amount, status, created_at, fulfillment_data")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50)
+  ]);
+
+  const transactions = transactionsRes.data || [];
+  const topups = topupsRes.data || [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="text-sm uppercase tracking-[0.2em] text-slate-400">My Purchases</div>
-        <h1 className="mt-2 text-3xl font-bold text-white">Pesanan Saya</h1>
-      </div>
-
-      {orders?.length ? (
-        <div className="space-y-5">
-          {orders.map((order) => {
-            const product = Array.isArray(order.products) ? order.products[0] : order.products;
-            const credential = Array.isArray(order.app_credentials) ? order.app_credentials[0] : order.app_credentials;
-            const fulfillmentData = (order as any).fulfillment_data || {};
-            const isPanel = (product as any)?.service_type === "pterodactyl";
-
-            return (
-              <Card key={order.id} className="grid gap-5 lg:grid-cols-[140px_1fr_auto]">
-                <img src={product?.image_url || "/placeholder.png"} alt={product?.name || "Product"} className="h-36 w-full rounded-2xl object-cover" />
-
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge>{product?.category || "Produk"}</Badge>
-                    <Badge className={isPanel ? "text-brand-200" : "text-slate-300"}>{isPanel ? "Panel Pterodactyl" : "Akun / Credential"}</Badge>
-                    <Badge className={(order as any).payment_method === "balance" ? "text-emerald-300" : "text-amber-300"}>
-                      {(order as any).payment_method === "balance" ? "Bayar dengan saldo" : "Bayar dengan Pakasir"}
-                    </Badge>
-                    <RealtimeStatusBadge transactionId={order.id} initialStatus={order.status} />
-                  </div>
-
-                  <div>
-                    <div className="text-xl font-semibold text-white">{product?.name}</div>
-                    <div className="mt-1 text-sm text-slate-400">{order.order_id}</div>
-                  </div>
-
-                  <div className="grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-                    <div>Base: {formatRupiah(order.amount)}</div>
-                    <div>Diskon: {formatRupiah(order.discount_amount ?? 0)}</div>
-                    <div>Total: {formatRupiah(order.final_amount ?? order.amount)}</div>
-                    <div>Kupon: {order.coupon_code || "-"}</div>
-                    <div>{formatDate(order.created_at)}</div>
-                    <div>Token: {order.status_token}</div>
-                    {isPanel && fulfillmentData.panel_plan_label && <div>Paket: {fulfillmentData.panel_plan_label}</div>}
-                    {isPanel && fulfillmentData.memory_text && <div>RAM {fulfillmentData.memory_text} • Disk {fulfillmentData.disk_text || '-'} • CPU {fulfillmentData.cpu_text || '-'}</div>}
-                  </div>
-
-                  {credential?.account_data && (
-                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 font-mono text-sm text-white whitespace-pre-wrap">
-                      {credential.account_data}
-                    </div>
-                  )}
-
-                  {isPanel && fulfillmentData && (order.status === 'settlement' || fulfillmentData.panel_url) && (
-                    <div className="rounded-2xl border border-brand-500/20 bg-brand-500/10 p-4 text-sm text-slate-200">
-                      <div className="mb-2 flex items-center gap-2 font-semibold text-white">
-                        <ServerCog className="h-4 w-4 text-brand-300" />
-                        Detail panel yang berhasil dibuat
-                      </div>
-                      <div>Paket: {fulfillmentData.panel_plan_label || '-'}</div>
-                      <div>Panel URL: {fulfillmentData.panel_url || '-'}</div>
-                      <div>Username Login: {fulfillmentData.panel_username || '-'}</div>
-                      <div>Email Login: {fulfillmentData.panel_email || '-'}</div>
-                      <div>Password Login: {fulfillmentData.panel_password || '-'}</div>
-                      <div>Server UUID: {fulfillmentData.server_uuid || '-'}</div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col items-stretch gap-3">
-                  {order.status === "pending" ? (
-                    <Link href={`/waiting-payment/${order.order_id}`}>
-                      <Button className="w-full">Lanjut Pembayaran</Button>
-                    </Link>
-                  ) : (
-                    <Link href={`/products/${product?.id}`}>
-                      <Button variant="secondary" className="w-full">Lihat Produk</Button>
-                    </Link>
-                  )}
-
-                  {(order as any).payment_method === "balance" && (
-                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-slate-200">
-                      <div className="mb-1 flex items-center gap-2 font-semibold text-white">
-                        <Wallet className="h-4 w-4 text-emerald-300" />
-                        Pembayaran saldo
-                      </div>
-                      Order ini diproses langsung dari saldo akun Anda.
-                    </div>
-                  )}
-
-                  {(order as any).payment_method === "qris" && order.status === 'pending' && (fulfillmentData.payment_fallback_url || fulfillmentData.payment_qr_url) && (
-                    <a href={fulfillmentData.payment_fallback_url || fulfillmentData.payment_qr_url} target="_blank" rel="noreferrer">
-                      <Button variant="outline" className="w-full">
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Link Bayar Backup
-                      </Button>
-                    </a>
-                  )}
-
-                  <a href={`/api/invoice/${order.order_id}`} target="_blank" rel="noreferrer">
-                    <Button variant="outline" className="w-full">
-                      <Download className="mr-2 h-4 w-4" />
-                      Invoice PDF
-                    </Button>
-                  </a>
-                </div>
-              </Card>
-            );
-          })}
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+      <section className="rounded-[32px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.35)] backdrop-blur-xl sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-1 text-[11px] font-black uppercase tracking-[0.32em] text-brand-200">
+              Riwayat transaksi
+            </div>
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-white">Pesanan dan top up Anda</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
+              Semua transaksi disusun dalam satu halaman agar lebih mudah dipantau, dicek ulang, dan diunduh invoicenya kapan pun dibutuhkan.
+            </p>
+          </div>
+          <Link href="/products" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-brand-400/40 hover:bg-brand-500/10 hover:text-brand-100">
+            Belanja lagi
+          </Link>
         </div>
-      ) : (
-        <Card>
-          <div className="text-slate-300">Belum ada transaksi.</div>
-        </Card>
-      )}
+      </section>
+
+      <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black text-white">Order produk</h2>
+            <span className="text-sm text-slate-400">{transactions.length} transaksi</span>
+          </div>
+          {transactions.length === 0 ? (
+            <div className="rounded-[28px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
+              Belum ada order produk. Setelah checkout berhasil, riwayatnya akan muncul di sini.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {transactions.map((order: any) => {
+                const productName = order.product_snapshot?.name || "Produk";
+                const manageHref = `/waiting-payment/${encodeURIComponent(order.order_id)}${order.public_order_code ? `?resi=${encodeURIComponent(order.public_order_code)}&type=transaction` : ""}`;
+                const invoiceHref = `/api/invoice/${encodeURIComponent(order.order_id)}?${new URLSearchParams({
+                  ...(order.public_order_code ? { resi: String(order.public_order_code) } : {}),
+                  download: "1"
+                }).toString()}`;
+
+                return (
+                  <article key={order.id} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_70px_rgba(2,6,23,0.24)]">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
+                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{order.status || "pending"}</span>
+                          <span>{new Date(order.created_at).toLocaleString("id-ID")}</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-white">{productName}</h3>
+                          <p className="mt-2 text-sm leading-7 text-slate-300">
+                            Order ID: <span className="font-semibold text-white">{order.order_id}</span>
+                            {order.public_order_code ? (
+                              <>
+                                {" "}• Resi: <span className="font-semibold text-brand-200">{order.public_order_code}</span>
+                              </>
+                            ) : null}
+                          </p>
+                          {order.variant_name ? <p className="mt-1 text-sm text-slate-400">Varian: {order.variant_name}</p> : null}
+                        </div>
+                      </div>
+
+                      <div className="min-w-[220px] rounded-[24px] border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300">
+                        <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Total pembayaran</div>
+                        <div className="mt-2 text-2xl font-black text-white">{formatRupiah(Number(order.final_amount || 0))}</div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <Link href={manageHref} className="rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 font-semibold text-brand-200 transition hover:bg-brand-500/20">
+                            Kelola order
+                          </Link>
+                          <a href={invoiceHref} className="rounded-full border border-white/10 px-3 py-1.5 font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5">
+                            Invoice PDF
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black text-white">Top up saldo</h2>
+            <span className="text-sm text-slate-400">{topups.length} transaksi</span>
+          </div>
+          {topups.length === 0 ? (
+            <div className="rounded-[28px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
+              Belum ada transaksi top up.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {topups.map((topup: any) => {
+                const manageHref = `/waiting-payment/${encodeURIComponent(topup.order_id)}${topup.public_order_code ? `?resi=${encodeURIComponent(topup.public_order_code)}&type=topup` : `?type=topup`}`;
+                return (
+                  <article key={topup.id} className="rounded-[26px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_60px_rgba(2,6,23,0.22)]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Top up</div>
+                        <h3 className="mt-2 text-lg font-black text-white">{formatRupiah(Number(topup.amount || 0))}</h3>
+                        <p className="mt-2 text-sm leading-7 text-slate-300">
+                          Order ID: <span className="font-semibold text-white">{topup.order_id}</span>
+                          {topup.public_order_code ? (
+                            <>
+                              {" "}• Resi: <span className="font-semibold text-brand-200">{topup.public_order_code}</span>
+                            </>
+                          ) : null}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">{new Date(topup.created_at).toLocaleString("id-ID")}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-slate-200">
+                          {topup.status || "pending"}
+                        </span>
+                        <Link href={manageHref} className="rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-sm font-semibold text-brand-200 transition hover:bg-brand-500/20">
+                          Lihat status
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

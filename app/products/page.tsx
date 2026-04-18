@@ -8,7 +8,7 @@ export default async function ProductsPage() {
   const admin = createAdminSupabaseClient();
   const { data: products } = await admin
     .from("products")
-    .select(`id, name, description, price, category, image_url, is_active, featured,
+    .select(`id, name, description, price, category, image_url, stock, sold_count, is_active, featured,
       product_variants ( id, price, is_active )`)
     .eq("is_active", true)
     .order("featured", { ascending: false })

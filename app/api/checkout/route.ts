@@ -25,9 +25,10 @@ export async function POST(request: Request) {
     const buyerName = String(body.buyerName || "").trim();
     const buyerEmail = String(body.buyerEmail || "").trim();
     const buyerPhone = String(body.buyerPhone || "").trim();
-    const notes = String(body.notes || "").trim();
+    const notes = String(body.notes || body.note || "").trim();
     const couponCode = String(body.couponCode || "").trim().toUpperCase();
     const variant = (body.variant || null) as VariantPayload | null;
+    const variantId = String(body.variantId || variant?.id || "").trim();
 
     if (!productId) return NextResponse.json({ error: "Produk wajib dipilih." }, { status: 400 });
     if (!buyerName || !buyerEmail) {
@@ -50,12 +51,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Produk tidak tersedia." }, { status: 404 });
     }
 
+    if (Number(product.stock || 0) <= 0) {
+      return NextResponse.json({ error: "Stok produk sedang habis." }, { status: 400 });
+    }
+
     let amount = Number(product.price || 0);
-    if (variant?.id) {
+    const selectedVariantId = variantId || variant?.id || "";
+    if (selectedVariantId) {
       const { data: variantRow } = await admin
         .from("product_variants")
         .select("id, name, price, compare_at_price, is_active")
-        .eq("id", variant.id)
+        .eq("id", selectedVariantId)
         .eq("product_id", product.id)
         .maybeSingle();
 
@@ -113,7 +119,7 @@ export async function POST(request: Request) {
     const orderId = generateOrderId();
     const publicOrderCode = generatePublicOrderCode();
     const statusToken = generateStatusToken();
-    const paymentStatusUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/payment-status/${orderId}?resi=${publicOrderCode}`;
+    const paymentStatusUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/waiting-payment/${orderId}?resi=${publicOrderCode}&type=transaction`;
     const qris = await createPakasirTransaction({ orderId, amount: finalAmount, method: "qris" });
     const paymentUrl = buildPakasirPayUrl({ amount: finalAmount, orderId, redirectUrl: paymentStatusUrl, qrisOnly: true });
 
@@ -188,8 +194,8 @@ export async function POST(request: Request) {
       qrUrl: null,
       paymentUrl,
       expiresAt: qris.expiresAt,
-      waitingPaymentUrl: `/waiting-payment/${orderId}?resi=${publicOrderCode}`,
-      paymentStatusUrl: `/payment-status/${orderId}?resi=${publicOrderCode}`
+      waitingPaymentUrl: `/waiting-payment/${orderId}?resi=${publicOrderCode}&type=transaction`,
+      paymentStatusUrl: `/waiting-payment/${orderId}?resi=${publicOrderCode}&type=transaction`
     });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Gagal membuat transaksi pembayaran." }, { status: 500 });

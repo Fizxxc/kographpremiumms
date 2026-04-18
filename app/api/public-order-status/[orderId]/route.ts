@@ -1,188 +1,159 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { getPakasirTransactionDetail, normalizePakasirStatus } from "@/lib/pakasir";
-import { fulfillProductOrder, settleWalletTopup } from "@/lib/fulfillment";
-import { buildDeliveryFields } from "@/lib/order-delivery";
+import { getPakasirTransactionDetail } from "@/lib/pakasir";
+import { syncPakasirOrderState } from "@/lib/payment-reconcile";
 
-async function getTransactionPayload(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string, resi: string) {
-  const { data: tx } = await admin
-    .from("transactions")
-    .select(`
-      id,
-      order_id,
-      user_id,
-      status,
-      amount,
-      final_amount,
-      payment_method,
-      public_order_code,
-      buyer_name,
-      buyer_email,
-      fulfillment_data,
-      created_at,
-      paid_at,
-      products ( name )
-    `)
-    .eq("order_id", orderId)
-    .eq("public_order_code", resi)
-    .maybeSingle();
+type StatusLookupResult = {
+  kind: "transaction" | "topup";
+  row: any;
+};
 
-  if (!tx) return null;
+async function findStatusRow(input: {
+  orderId: string;
+  publicOrderCode?: string | null;
+  explicitType?: "transaction" | "topup" | null;
+}) {
+  const admin = createAdminSupabaseClient();
+  const orderId = input.orderId.trim();
+  const publicOrderCode = input.publicOrderCode?.trim() || null;
 
-  const { data: credential } = await admin
-    .from("app_credentials")
-    .select("account_data")
-    .eq("transaction_id", (tx as any).id)
-    .maybeSingle();
+  const findTransaction = async (): Promise<StatusLookupResult | null> => {
+    let query = admin
+      .from("transactions")
+      .select(
+        "id, order_id, public_order_code, status, amount, final_amount, fulfillment_data, buyer_name, buyer_email, product_snapshot, product_id, variant_name, variant_id, updated_at"
+      )
+      .eq("order_id", orderId)
+      .limit(1);
 
-  const product = Array.isArray((tx as any).products) ? (tx as any).products[0] : (tx as any).products;
-  const deliveryFields = buildDeliveryFields({
-    fulfillmentData: (tx as any).fulfillment_data || {},
-    credential
-  });
-
-  return {
-    type: "transaction",
-    orderId: (tx as any).order_id,
-    resi: (tx as any).public_order_code,
-    status: (tx as any).status,
-    amount: Number((tx as any).final_amount || (tx as any).amount || 0),
-    productName: String(product?.name || "Pesanan"),
-    paymentMethod: (tx as any).payment_method || "qris",
-    buyerName: (tx as any).buyer_name || null,
-    buyerEmail: (tx as any).buyer_email || null,
-    createdAt: (tx as any).created_at || null,
-    paidAt: (tx as any).paid_at || null,
-    fulfillmentData: (tx as any).fulfillment_data || {},
-    credentialFields: deliveryFields,
-    hasCredential: deliveryFields.length > 0,
-    invoiceUrl: `/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(String((tx as any).public_order_code || ""))}`,
-    invoiceDownloadUrl: `/api/invoice/${encodeURIComponent(String((tx as any).order_id))}?resi=${encodeURIComponent(String((tx as any).public_order_code || ""))}&download=1`
-  };
-}
-
-async function getTopupPayload(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string) {
-  const { data: topup } = await admin
-    .from("wallet_topups")
-    .select("order_id, amount, status, created_at, settled_at")
-    .eq("order_id", orderId)
-    .maybeSingle();
-
-  if (!topup) return null;
-
-  return {
-    type: "topup",
-    orderId: (topup as any).order_id,
-    status: (topup as any).status,
-    amount: Number((topup as any).amount || 0),
-    paymentMethod: "qris",
-    createdAt: (topup as any).created_at || null,
-    paidAt: (topup as any).settled_at || null,
-    productName: "Top up saldo"
-  };
-}
-
-async function syncLiveStatus(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string) {
-  const { data: existingTx } = await admin
-    .from("transactions")
-    .select("id, status, amount, final_amount")
-    .eq("order_id", orderId)
-    .maybeSingle();
-
-  if (existingTx) {
-    const live = await getPakasirTransactionDetail({
-      orderId,
-      amount: Number((existingTx as any).final_amount || (existingTx as any).amount || 0)
-    }).catch(() => null);
-
-    const liveStatus = normalizePakasirStatus((live as any)?.transaction?.status);
-    if (!liveStatus) return;
-
-    const previousStatus = normalizePakasirStatus((existingTx as any).status || "pending");
-    if (previousStatus !== liveStatus) {
-      await admin
-        .from("transactions")
-        .update({
-          status: liveStatus,
-          paid_at: liveStatus === "settlement" ? new Date().toISOString() : null
-        })
-        .eq("id", (existingTx as any).id);
+    if (publicOrderCode) {
+      query = query.eq("public_order_code", publicOrderCode);
     }
 
-    if (liveStatus === "settlement") {
-      await fulfillProductOrder(orderId).catch(() => null);
-    }
-    return;
-  }
+    const { data } = await query.maybeSingle();
+    return data ? { kind: "transaction", row: data } : null;
+  };
 
-  const { data: existingTopup } = await admin
-    .from("wallet_topups")
-    .select("id, status, amount")
-    .eq("order_id", orderId)
-    .maybeSingle();
-
-  if (!existingTopup) return;
-
-  const live = await getPakasirTransactionDetail({
-    orderId,
-    amount: Number((existingTopup as any).amount || 0)
-  }).catch(() => null);
-
-  const liveStatus = normalizePakasirStatus((live as any)?.transaction?.status);
-  if (!liveStatus) return;
-
-  const previousStatus = normalizePakasirStatus((existingTopup as any).status || "pending");
-  if (previousStatus !== liveStatus) {
-    await admin
+  const findTopup = async (): Promise<StatusLookupResult | null> => {
+    let query = admin
       .from("wallet_topups")
-      .update({
-        status: liveStatus,
-        settled_at: liveStatus === "settlement" ? new Date().toISOString() : null
-      })
-      .eq("id", (existingTopup as any).id);
-  }
+      .select("id, order_id, public_order_code, status, amount, fulfillment_data, user_id, updated_at")
+      .eq("order_id", orderId)
+      .limit(1);
 
-  if (liveStatus === "settlement") {
-    await settleWalletTopup(orderId).catch(() => null);
-  }
+    if (publicOrderCode) {
+      query = query.eq("public_order_code", publicOrderCode);
+    }
+
+    const { data } = await query.maybeSingle();
+    return data ? { kind: "topup", row: data } : null;
+  };
+
+  if (input.explicitType === "transaction") return findTransaction();
+  if (input.explicitType === "topup") return findTopup();
+
+  return (await findTransaction()) || (await findTopup());
 }
 
 export async function GET(request: Request, { params }: { params: { orderId: string } }) {
   try {
-    const orderId = String(params.orderId || "").trim();
     const url = new URL(request.url);
-    const resi = String(url.searchParams.get("resi") || "").trim();
-    const explicitType = String(url.searchParams.get("type") || "").trim().toLowerCase();
+    const orderId = String(params.orderId || "").trim();
+    const publicOrderCode = String(url.searchParams.get("resi") || "").trim() || null;
+    const explicitType = (url.searchParams.get("type") || "").trim() as "transaction" | "topup" | "";
 
     if (!orderId) {
       return NextResponse.json({ error: "Order ID wajib diisi." }, { status: 400 });
     }
 
-    const admin = createAdminSupabaseClient();
+    const found = await findStatusRow({
+      orderId,
+      publicOrderCode,
+      explicitType: explicitType || null
+    });
 
-    if (explicitType === "transaction" && !resi) {
-      return NextResponse.json({ error: "Resi pesanan wajib diisi untuk cek transaksi." }, { status: 400 });
+    if (!found) {
+      return NextResponse.json(
+        {
+          error: publicOrderCode
+            ? "Pesanan tidak ditemukan. Pastikan order ID dan resi sudah benar."
+            : "Pesanan tidak ditemukan. Gunakan tautan lengkap dari checkout atau cek kembali order ID Anda.",
+          code: "ORDER_NOT_FOUND"
+        },
+        { status: 404 }
+      );
     }
 
-    if (explicitType !== "topup") {
-      await syncLiveStatus(admin, orderId).catch(() => null);
+    await syncPakasirOrderState(orderId).catch(() => null);
+
+    const refreshed = await findStatusRow({
+      orderId,
+      publicOrderCode,
+      explicitType: found.kind
+    });
+
+    const row = refreshed?.row || found.row;
+    const fulfillment = (row as any).fulfillment_data || {};
+    const amount = Number((row as any).final_amount || (row as any).amount || fulfillment.payment_total_amount || 0);
+    let gatewayPayload = fulfillment.provider_response || fulfillment.gateway_payload || null;
+
+    try {
+      const pakasir = await getPakasirTransactionDetail({
+        orderId,
+        amount: amount > 0 ? amount : undefined
+      });
+
+      if (pakasir?.data) {
+        gatewayPayload = pakasir.data;
+      }
+    } catch {
+      // Tetap tampilkan data lokal bila request ke Pakasir gagal.
     }
 
-    const txPayload = resi ? await getTransactionPayload(admin, orderId, resi) : null;
-    if (txPayload) {
-      return NextResponse.json(txPayload, { status: 200 });
-    }
+    const paymentStatus = String(
+      gatewayPayload?.payment_status || gatewayPayload?.paymentStatus || fulfillment.payment_status || (row as any).status || "pending"
+    ).toLowerCase();
 
-    const topupPayload = await getTopupPayload(admin, orderId);
-    if (topupPayload) {
-      return NextResponse.json(topupPayload, { status: 200 });
-    }
+    const normalizedStatus = ["settlement", "paid", "success", "berhasil"].includes(paymentStatus)
+      ? "success"
+      : ["expire", "expired", "cancel", "cancelled", "failed"].includes(paymentStatus)
+        ? "failed"
+        : "pending";
 
-    return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({
+      ok: true,
+      kind: found.kind,
+      orderId,
+      publicOrderCode: (row as any).public_order_code || publicOrderCode,
+      status: normalizedStatus,
+      rawStatus: paymentStatus,
+      amount,
+      buyerName: found.kind === "transaction" ? (row as any).buyer_name || null : null,
+      buyerEmail: found.kind === "transaction" ? (row as any).buyer_email || null : null,
+      productSnapshot: found.kind === "transaction" ? (row as any).product_snapshot || null : null,
+      variantName: found.kind === "transaction" ? (row as any).variant_name || null : null,
+      qrString:
+        gatewayPayload?.qr_content ||
+        gatewayPayload?.qr_string ||
+        gatewayPayload?.qris_content ||
+        fulfillment.payment_qr_string ||
+        null,
+      qrUrl: gatewayPayload?.qr_url || gatewayPayload?.qr_image || gatewayPayload?.qris_url || fulfillment.payment_qr_url || null,
+      paymentNumber: gatewayPayload?.payment_no || gatewayPayload?.payment_number || fulfillment.payment_number || null,
+      expiresAt: gatewayPayload?.expired_at || gatewayPayload?.expires_at || fulfillment.payment_expires_at || null,
+      paymentUrl: fulfillment.payment_fallback_url || null,
+      credentialStatus: fulfillment.delivery_status || null,
+      updatedAt: (row as any).updated_at || null,
+      message:
+        normalizedStatus === "success"
+          ? found.kind === "topup"
+            ? "Pembayaran berhasil dan saldo sedang diproses ke akun Anda."
+            : "Pembayaran berhasil dan pesanan Anda sedang diproses."
+          : normalizedStatus === "failed"
+            ? "Transaksi sudah tidak dapat diproses. Silakan buat pembayaran baru bila dibutuhkan."
+            : "Pembayaran masih menunggu verifikasi."
+    });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || "Gagal memuat status pesanan." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error?.message || "Gagal mengambil status pesanan." }, { status: 500 });
   }
 }

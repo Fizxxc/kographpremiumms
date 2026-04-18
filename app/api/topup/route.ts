@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const admin = createAdminSupabaseClient();
     const orderId = generateOrderId();
     const publicOrderCode = generatePublicOrderCode();
-    const paymentStatusUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/payment-status/${orderId}?resi=${publicOrderCode}&type=topup`;
+    const paymentStatusUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/waiting-payment/${orderId}?resi=${publicOrderCode}&type=topup`;
     const qris = await createPakasirTransaction({ orderId, amount, method: "qris" });
     const paymentUrl = buildPakasirPayUrl({ amount, orderId, redirectUrl: paymentStatusUrl, qrisOnly: true });
 
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       qrUrl: null,
       paymentUrl,
       expiresAt: qris.expiresAt,
-      waitingPaymentUrl: `/payment-status/${orderId}?resi=${publicOrderCode}&type=topup`
+      waitingPaymentUrl: `/waiting-payment/${orderId}?resi=${publicOrderCode}&type=topup`
     });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Gagal membuat top up." }, { status: 500 });
