@@ -39,7 +39,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           <section className="surface-card overflow-hidden p-0">
             <div className="relative aspect-[16/10] bg-[linear-gradient(135deg,rgba(248,201,51,0.12),rgba(14,165,233,0.08))]">
               {(product as any).image_url ? (
-                <Image src={(product as any).image_url} alt={(product as any).name} fill className="object-cover" />
+                <Image src={(product as any).image_url} alt={(product as any).name} fill className="object-cover" unoptimized />
               ) : (
                 <div className="flex h-full items-center justify-center text-sm font-semibold uppercase tracking-[0.28em] text-[color:var(--foreground-muted)]">
                   Preview produk

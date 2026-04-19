@@ -28,7 +28,7 @@ export default function ProductCard({ product, forceBadge }: { product: Product;
       <div className="absolute inset-x-0 top-0 h-24 opacity-0 transition duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(135deg, var(--mesh-a), transparent 50%, var(--mesh-b))" }} />
       <div className="relative aspect-[16/10] overflow-hidden border-b" style={{ borderColor: "var(--border)", background: "linear-gradient(135deg, var(--accent-soft), transparent 55%, var(--mesh-b))" }}>
         {product.image_url ? (
-          <Image src={product.image_url} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
+          <Image src={product.image_url} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm font-bold uppercase tracking-[0.28em]" style={{ color: "var(--foreground-muted)" }}>
             {product.category || "Produk premium"}
