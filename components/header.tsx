@@ -1,10 +1,25 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ShieldCheck } from "lucide-react";
+import { Search, ShieldCheck, UserCircle2 } from "lucide-react";
 import HeaderNav from "@/components/header-nav";
+import { LogoutButton } from "@/components/logout-button";
 import { SITE } from "@/lib/constants";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export default function Header() {
+export default async function Header() {
+  const supabase = createServerSupabaseClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("role, full_name").eq("id", user.id).maybeSingle()
+    : { data: null };
+
+  const isLoggedIn = Boolean(user);
+  const isAdmin = profile?.role === "admin";
+  const accountLabel = profile?.full_name?.trim() || user?.email?.split("@")[0] || "Akun saya";
+
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0e11]/88 backdrop-blur-xl">
       <div className="site-container py-4">
@@ -21,7 +36,7 @@ export default function Header() {
             </Link>
 
             <div className="lg:hidden">
-              <HeaderNav />
+              <HeaderNav isLoggedIn={isLoggedIn} isAdmin={isAdmin} accountLabel={accountLabel} />
             </div>
           </div>
 
@@ -36,13 +51,30 @@ export default function Header() {
           </form>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <Link href="/login" className="secondary-button h-11 border-white/10 bg-white/5 px-5 text-white hover:bg-white/10">Login</Link>
-            <Link href="/register" className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-cyan-400 px-5 text-sm font-bold text-slate-950 shadow-[0_18px_40px_-24px_rgba(245,158,11,0.65)] transition hover:-translate-y-0.5">Register</Link>
+            {isLoggedIn ? (
+              <>
+                {isAdmin ? (
+                  <Link href="/admin" className="secondary-button h-11 border-white/10 bg-white/5 px-5 text-white hover:bg-white/10">
+                    Dashboard admin
+                  </Link>
+                ) : null}
+                <Link href="/profile" className="secondary-button inline-flex h-11 items-center gap-2 border-white/10 bg-white/5 px-5 text-white hover:bg-white/10">
+                  <UserCircle2 className="h-4 w-4 text-yellow-300" />
+                  <span className="max-w-[140px] truncate">{accountLabel}</span>
+                </Link>
+                <LogoutButton label="Keluar" variant="outline" className="h-11 border-white/10 bg-transparent px-5 text-white hover:bg-white/5" />
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="secondary-button h-11 border-white/10 bg-white/5 px-5 text-white hover:bg-white/10">Login</Link>
+                <Link href="/register" className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-cyan-400 px-5 text-sm font-bold text-slate-950 shadow-[0_18px_40px_-24px_rgba(245,158,11,0.65)] transition hover:-translate-y-0.5">Register</Link>
+              </>
+            )}
           </div>
         </div>
 
         <div className="mt-4 hidden items-center justify-between gap-4 border-t border-white/10 pt-4 lg:flex">
-          <HeaderNav />
+          <HeaderNav isLoggedIn={isLoggedIn} isAdmin={isAdmin} accountLabel={accountLabel} />
           <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400">
             <ShieldCheck className="h-3.5 w-3.5 text-yellow-300" />
             Checkout production tetap aman, yang dirombak hanya tampilannya.

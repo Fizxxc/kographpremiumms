@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { LayoutDashboard, Menu, UserCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/logout-button";
 
 const NAV_ITEMS = [
   { href: "/", label: "Beranda" },
@@ -15,7 +16,13 @@ const NAV_ITEMS = [
   { href: "/top-up", label: "Top Up" }
 ];
 
-export default function HeaderNav() {
+type HeaderNavProps = {
+  isLoggedIn?: boolean;
+  isAdmin?: boolean;
+  accountLabel?: string;
+};
+
+export default function HeaderNav({ isLoggedIn = false, isAdmin = false, accountLabel = "Akun saya" }: HeaderNavProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -71,6 +78,32 @@ export default function HeaderNav() {
               </Button>
             </div>
 
+            {isLoggedIn ? (
+              <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4 text-white">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-yellow-300">
+                    <UserCircle2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Sudah login</div>
+                    <div className="truncate text-sm font-bold text-white">{accountLabel}</div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3">
+                  <Link href="/profile" onClick={() => setOpen(false)} className="secondary-button h-11 border-white/10 bg-white/5 text-white">
+                    Buka profil
+                  </Link>
+                  {isAdmin ? (
+                    <Link href="/admin" onClick={() => setOpen(false)} className="secondary-button inline-flex h-11 items-center justify-center gap-2 border-white/10 bg-white/5 text-white">
+                      <LayoutDashboard className="h-4 w-4 text-yellow-300" />
+                      Dashboard admin
+                    </Link>
+                  ) : null}
+                  <LogoutButton label="Keluar" variant="outline" className="h-11 border-white/10 bg-transparent text-white hover:bg-white/5" />
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-8 space-y-2">
               {NAV_ITEMS.map((item) => {
                 const active = pathname === item.href;
@@ -92,10 +125,12 @@ export default function HeaderNav() {
               })}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <Link href="/login" onClick={() => setOpen(false)} className="secondary-button h-11 border-white/10 bg-white/5 text-white">Login</Link>
-              <Link href="/register" onClick={() => setOpen(false)} className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-cyan-400 px-5 text-sm font-bold text-slate-950">Register</Link>
-            </div>
+            {!isLoggedIn ? (
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <Link href="/login" onClick={() => setOpen(false)} className="secondary-button h-11 border-white/10 bg-white/5 text-white">Login</Link>
+                <Link href="/register" onClick={() => setOpen(false)} className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-cyan-400 px-5 text-sm font-bold text-slate-950">Register</Link>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}

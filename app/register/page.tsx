@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BadgeCheck, Sparkles, UserRoundPlus } from "lucide-react";
@@ -15,6 +15,16 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        router.replace("/profile");
+      }
+    });
+  }, [router]);
 
   async function submit() {
     setLoading(true);
