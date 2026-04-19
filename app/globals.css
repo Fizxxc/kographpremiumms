@@ -3,45 +3,47 @@
 @tailwind utilities;
 
 :root {
-  --background: #f5efe2;
-  --background-soft: #fff9ee;
-  --foreground: #0d1b2e;
-  --foreground-soft: #4e6178;
-  --card: rgba(255, 255, 255, 0.78);
-  --card-strong: rgba(255, 255, 255, 0.92);
-  --card-subtle: rgba(255, 255, 255, 0.58);
-  --border: rgba(13, 27, 46, 0.08);
-  --accent: #f7cf46;
-  --accent-strong: #f5b400;
-  --accent-soft: rgba(247, 207, 70, 0.14);
-  --success: #22c55e;
+  --background: #f3f6fb;
+  --background-soft: #ffffff;
+  --foreground: #12233d;
+  --foreground-soft: #5f6f88;
+  --foreground-muted: #7d8aa3;
+  --card: rgba(255, 255, 255, 0.92);
+  --card-strong: #ffffff;
+  --card-subtle: #f8fafc;
+  --border: rgba(18, 35, 61, 0.10);
+  --accent: #f8c933;
+  --accent-strong: #f3b203;
+  --accent-soft: rgba(248, 201, 51, 0.16);
+  --success: #16a34a;
   --danger: #ef4444;
-  --shadow: 0 36px 90px -52px rgba(15, 23, 42, 0.35);
-  --shadow-soft: 0 22px 54px -34px rgba(15, 23, 42, 0.22);
-  --mesh-a: rgba(247, 207, 70, 0.16);
-  --mesh-b: rgba(34, 197, 94, 0.08);
+  --shadow: 0 28px 90px -50px rgba(15, 23, 42, 0.24);
+  --shadow-soft: 0 18px 46px -28px rgba(15, 23, 42, 0.18);
+  --mesh-a: rgba(248, 201, 51, 0.16);
+  --mesh-b: rgba(14, 165, 233, 0.10);
   --mesh-c: rgba(59, 130, 246, 0.08);
 }
 
 .dark {
-  --background: #041126;
-  --background-soft: #07182f;
+  --background: #081224;
+  --background-soft: #0b1730;
   --foreground: #f8fbff;
-  --foreground-soft: #99aac0;
-  --card: rgba(6, 20, 43, 0.74);
-  --card-strong: rgba(7, 22, 45, 0.9);
-  --card-subtle: rgba(8, 28, 56, 0.56);
-  --border: rgba(255, 255, 255, 0.08);
-  --accent: #f5cf53;
-  --accent-strong: #ffd84d;
-  --accent-soft: rgba(245, 207, 83, 0.12);
+  --foreground-soft: #9fb0c7;
+  --foreground-muted: #7d92ad;
+  --card: rgba(10, 23, 48, 0.84);
+  --card-strong: rgba(10, 23, 48, 0.96);
+  --card-subtle: rgba(12, 28, 58, 0.78);
+  --border: rgba(255, 255, 255, 0.10);
+  --accent: #f8c933;
+  --accent-strong: #ffd24b;
+  --accent-soft: rgba(248, 201, 51, 0.12);
   --success: #34d399;
   --danger: #fb7185;
-  --shadow: 0 38px 110px -54px rgba(2, 6, 23, 0.85);
-  --shadow-soft: 0 24px 64px -38px rgba(2, 6, 23, 0.7);
-  --mesh-a: rgba(245, 207, 83, 0.13);
-  --mesh-b: rgba(34, 197, 94, 0.12);
-  --mesh-c: rgba(14, 165, 233, 0.14);
+  --shadow: 0 34px 110px -56px rgba(2, 6, 23, 0.84);
+  --shadow-soft: 0 24px 60px -38px rgba(2, 6, 23, 0.72);
+  --mesh-a: rgba(248, 201, 51, 0.12);
+  --mesh-b: rgba(14, 165, 233, 0.12);
+  --mesh-c: rgba(99, 102, 241, 0.12);
 }
 
 @layer base {
@@ -56,15 +58,15 @@
   body {
     color: var(--foreground);
     background:
-      radial-gradient(circle at top left, var(--mesh-a), transparent 30%),
-      radial-gradient(circle at 100% 20%, var(--mesh-c), transparent 28%),
-      radial-gradient(circle at 40% 100%, var(--mesh-b), transparent 30%),
+      radial-gradient(circle at top left, var(--mesh-a), transparent 26%),
+      radial-gradient(circle at 100% 12%, var(--mesh-b), transparent 24%),
+      radial-gradient(circle at 15% 100%, var(--mesh-c), transparent 28%),
       linear-gradient(180deg, var(--background-soft), var(--background));
     min-height: 100vh;
   }
 
   ::selection {
-    background: rgba(245, 207, 83, 0.28);
+    background: rgba(248, 201, 51, 0.28);
   }
 
   h1,
@@ -87,8 +89,13 @@
 }
 
 @layer components {
-  .site-container {
+  .site-container,
+  .container {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-section {
+    @apply pb-16 pt-6 sm:pb-20 sm:pt-8;
   }
 
   .mesh-backdrop {
@@ -103,50 +110,63 @@
     z-index: -1;
     border-radius: inherit;
     background:
-      radial-gradient(circle at 12% 20%, var(--mesh-a), transparent 26%),
-      radial-gradient(circle at 88% 14%, var(--mesh-c), transparent 24%),
-      radial-gradient(circle at 58% 100%, var(--mesh-b), transparent 30%);
+      radial-gradient(circle at 8% 20%, var(--mesh-a), transparent 22%),
+      radial-gradient(circle at 100% 10%, var(--mesh-b), transparent 22%),
+      radial-gradient(circle at 55% 100%, var(--mesh-c), transparent 26%);
     pointer-events: none;
   }
 
+  .surface-card,
   .brand-shell {
-    @apply relative overflow-hidden rounded-[32px] border p-6 sm:p-8 lg:p-10;
+    @apply rounded-[30px] border;
     background: var(--card-strong);
     border-color: var(--border);
     box-shadow: var(--shadow);
-    backdrop-filter: blur(18px);
   }
 
-  .brand-panel {
-    @apply rounded-[28px] border p-5 sm:p-6;
+  .surface-card {
+    @apply p-6 sm:p-8;
+  }
+
+  .brand-shell {
+    @apply relative overflow-hidden p-6 sm:p-8 lg:p-10;
+  }
+
+  .brand-panel,
+  .brand-card,
+  .stat-card,
+  .surface-soft {
+    @apply rounded-[24px] border;
+    border-color: var(--border);
     background: var(--card);
-    border-color: var(--border);
     box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(16px);
   }
 
-  .brand-card {
-    @apply rounded-[24px] border p-4 sm:p-5;
-    background: var(--card-subtle);
-    border-color: var(--border);
-    backdrop-filter: blur(16px);
+  .brand-panel,
+  .surface-soft {
+    @apply p-5 sm:p-6;
   }
 
-  .brand-pill {
-    @apply inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em];
+  .brand-card,
+  .stat-card {
+    @apply p-4 sm:p-5;
+  }
+
+  .brand-pill,
+  .badge-chip {
+    @apply inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.28em];
     background: var(--accent-soft);
-    border-color: rgba(245, 207, 83, 0.24);
+    border-color: rgba(248, 201, 51, 0.28);
     color: color-mix(in srgb, var(--foreground) 78%, var(--accent-strong));
   }
 
   .brand-kicker {
-    @apply text-[11px] font-semibold uppercase tracking-[0.32em];
-    color: color-mix(in srgb, var(--foreground) 70%, var(--accent-strong));
+    @apply text-[11px] font-bold uppercase tracking-[0.32em];
+    color: color-mix(in srgb, var(--foreground) 76%, var(--accent-strong));
   }
 
   .brand-title {
-    @apply text-4xl font-black leading-[0.92] sm:text-5xl lg:text-7xl;
-    color: var(--foreground);
+    @apply text-4xl font-black leading-[0.94] sm:text-5xl lg:text-6xl;
   }
 
   .brand-subtitle {
@@ -154,36 +174,48 @@
     color: var(--foreground-soft);
   }
 
-  .brand-muted {
+  .brand-link {
+    @apply inline-flex items-center gap-2 text-sm font-semibold transition hover:opacity-80;
+    color: var(--foreground);
+  }
+
+  .text-gradient {
+    background: linear-gradient(90deg, #f3b203 0%, #f59e0b 55%, #1d4ed8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .primary-button {
+    @apply inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-bold text-slate-950 transition hover:-translate-y-0.5;
+    background: linear-gradient(135deg, #ffd54f 0%, #f3b203 100%);
+    box-shadow: 0 18px 36px -24px rgba(243, 178, 3, 0.72);
+  }
+
+  .secondary-button {
+    @apply inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold transition hover:-translate-y-0.5;
+    border-color: var(--border);
+    background: var(--card);
+    color: var(--foreground);
+  }
+
+  .section-heading {
+    @apply text-3xl font-black sm:text-4xl;
+    color: var(--foreground);
+  }
+
+  .section-subtitle {
+    @apply text-sm leading-7 sm:text-base sm:leading-8;
     color: var(--foreground-soft);
   }
 
-  .brand-number {
-    color: var(--foreground);
-    font-weight: 800;
-    letter-spacing: -0.03em;
-  }
-
-  .brand-accent {
-    color: var(--accent-strong);
-  }
-
-  .brand-link {
-    @apply inline-flex items-center gap-2 font-medium transition hover:opacity-80;
-    color: var(--foreground);
-  }
-
-  .divider-soft {
-    border-color: var(--border);
-  }
-
-  .page-section {
-    @apply pb-20 pt-8 sm:pt-12;
+  .reveal-up {
+    animation: fade-up 0.6s ease both;
   }
 
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--foreground) 16%, transparent) transparent;
+    scrollbar-color: color-mix(in srgb, var(--foreground) 18%, transparent) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -191,12 +223,8 @@
     height: 8px;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--foreground) 16%, transparent);
+    background: color-mix(in srgb, var(--foreground) 18%, transparent);
     border-radius: 9999px;
   }
 }
@@ -204,5 +232,16 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

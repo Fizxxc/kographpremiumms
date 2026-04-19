@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowRight, BadgeCheck, LayoutGrid, ShieldCheck } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,69 +31,74 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container py-10 md:py-16">
-      <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[0.95fr,1.05fr]">
-        <section className="surface-card hidden min-h-[560px] overflow-hidden p-8 lg:flex lg:flex-col lg:justify-between">
-          <div className="space-y-5">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 dark:border-white/10 dark:bg-white/5">
-              <img src="/logo.png" alt="Kograph Premium" className="h-10 w-10 object-contain" />
+    <div className="page-section">
+      <div className="site-container">
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <section className="brand-shell mesh-backdrop hidden min-h-[560px] lg:flex lg:flex-col lg:justify-between">
+            <div className="space-y-5">
+              <div className="badge-chip">Masuk ke akun</div>
+              <h1 className="text-4xl font-black leading-tight text-[color:var(--foreground)]">Masuk dan lanjutkan order dengan UI yang sekarang lebih clean dan profesional.</h1>
+              <p className="max-w-md text-sm leading-8 text-[color:var(--foreground-soft)]">
+                Halaman login dirapikan agar sesuai dengan tampilan marketplace digital modern: rapi, ringan, dan tetap fokus ke aksi utama.
+              </p>
             </div>
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">Akses akun</div>
-              <h1 className="mt-3 text-4xl font-black leading-tight text-slate-950 dark:text-white">Masuk ke akunmu dan lanjutkan order tanpa ribet.</h1>
-              <p className="mt-4 max-w-md text-sm leading-7 text-slate-600 dark:text-slate-300">Semua dibuat lebih rapi supaya kamu bisa langsung fokus ke produk, pembayaran, dan status pesanan.</p>
+
+            <div className="grid gap-4">
+              {[
+                { icon: LayoutGrid, title: "Visual lebih ringan", body: "Form dan informasi pendukung dipisah jelas supaya mata user tidak cepat lelah." },
+                { icon: ShieldCheck, title: "Terlihat meyakinkan", body: "Hierarki judul, tombol, dan field dibuat lebih konsisten di seluruh flow." },
+                { icon: BadgeCheck, title: "Nyambung ke katalog", body: "Setelah login, pelanggan bisa langsung lanjut ke produk, pesanan, atau status transaksi." }
+              ].map((item) => (
+                <div key={item.title} className="brand-card flex items-start gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--accent-strong)]">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-[color:var(--foreground)]">{item.title}</div>
+                    <p className="mt-1 text-sm leading-7">{item.body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-[28px] border border-slate-200/80 bg-white/70 p-5 dark:border-white/10 dark:bg-white/5">
-            <div className="text-sm font-semibold text-slate-950 dark:text-white">Lebih nyaman dipakai</div>
-            <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">Tampilan login dibuat lebih bersih, tidak ramai, dan tetap enak dibuka di desktop maupun mobile.</p>
-          </div>
-        </section>
+          <section className="surface-card p-5 sm:p-8">
+            <div className="mx-auto max-w-xl space-y-6">
+              <div>
+                <div className="badge-chip lg:hidden">Selamat datang kembali</div>
+                <div className="hidden lg:block brand-kicker">Selamat datang kembali</div>
+                <h2 className="mt-3 text-3xl font-black text-[color:var(--foreground)]">Masuk untuk melanjutkan pesananmu.</h2>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-soft)]">Gunakan email dan password yang sudah terdaftar.</p>
+              </div>
 
-        <section className="surface-card p-5 sm:p-8">
-          <div className="mx-auto max-w-xl space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 lg:hidden">
-                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 dark:border-white/10 dark:bg-white/5">
-                  <img src="/logo.png" alt="Kograph Premium" className="h-9 w-9 object-contain" />
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[color:var(--foreground)]">Email</label>
+                  <Input type="email" placeholder="nama@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">Akses akun</div>
-                  <div className="text-lg font-black text-slate-950 dark:text-white">Login</div>
+                  <label className="mb-2 block text-sm font-semibold text-[color:var(--foreground)]">Password</label>
+                  <Input type="password" placeholder="Masukkan password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
               </div>
 
-              <div className="hidden lg:block">
-                <div className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">Selamat datang kembali</div>
-                <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">Masuk untuk melanjutkan pesananmu.</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">Gunakan email dan password yang sudah terdaftar.</p>
-              </div>
-            </div>
+              <Button className="w-full" onClick={submit} disabled={loading}>
+                {loading ? "Masuk..." : "Masuk ke akun"}
+              </Button>
 
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</label>
-                <Input type="email" placeholder="nama@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <div className="rounded-[24px] border border-[color:var(--border)] bg-[color:var(--card-subtle)] p-4 text-sm leading-7 text-[color:var(--foreground-soft)]">
+                Belum punya akun?{" "}
+                <Link href="/register" className="font-semibold text-[color:var(--foreground)] underline underline-offset-4">
+                  Buat akun sekarang
+                </Link>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Password</label>
-                <Input type="password" placeholder="Masukkan password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-            </div>
 
-            <Button className="w-full rounded-full bg-slate-950 text-white hover:bg-slate-800 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200" onClick={submit} disabled={loading}>
-              {loading ? "Masuk..." : "Masuk ke akun"}
-            </Button>
-
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Belum punya akun?{" "}
-              <Link href="/register" className="font-semibold text-slate-950 underline underline-offset-4 dark:text-amber-300">
-                Buat akun sekarang
+              <Link href="/products" className="brand-link">
+                Lihat katalog dulu <ArrowRight className="h-4 w-4" />
               </Link>
-            </p>
-          </div>
-        </section>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

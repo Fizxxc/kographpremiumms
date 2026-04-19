@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BadgeCheck, FileText, RefreshCw, Wallet } from "lucide-react";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/format";
 
@@ -11,9 +12,7 @@ export default async function OrdersPage() {
     data: { user }
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login?next=/orders");
-  }
+  if (!user) redirect("/login?next=/orders");
 
   const [transactionsRes, topupsRes] = await Promise.all([
     supabase
@@ -34,131 +33,121 @@ export default async function OrdersPage() {
   const topups = topupsRes.data || [];
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
-      <section className="rounded-[32px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.35)] backdrop-blur-xl sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-4 py-1 text-[11px] font-black uppercase tracking-[0.32em] text-brand-200">
-              Riwayat transaksi
+    <div className="page-section">
+      <div className="site-container flex flex-col gap-8">
+        <section className="brand-shell mesh-backdrop">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="badge-chip">Riwayat transaksi</div>
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-[color:var(--foreground)] sm:text-4xl">Pesanan dan top up Anda kini tampil lebih jelas.</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-8 text-[color:var(--foreground-soft)]">
+                Seluruh riwayat dipisah menjadi blok yang lebih rapih agar pelanggan gampang melihat status, resi, invoice, dan aksi lanjutan tanpa layout yang membingungkan.
+              </p>
             </div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-white">Pesanan dan top up Anda</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
-              Semua transaksi disusun dalam satu halaman agar lebih mudah dipantau, dicek ulang, dan diunduh invoicenya kapan pun dibutuhkan.
-            </p>
+            <Link href="/products" className="primary-button">Belanja lagi</Link>
           </div>
-          <Link href="/products" className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-brand-400/40 hover:bg-brand-500/10 hover:text-brand-100">
-            Belanja lagi
-          </Link>
-        </div>
-      </section>
+        </section>
 
-      <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-white">Order produk</h2>
-            <span className="text-sm text-slate-400">{transactions.length} transaksi</span>
-          </div>
-          {transactions.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
-              Belum ada order produk. Setelah checkout berhasil, riwayatnya akan muncul di sini.
+        <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black text-[color:var(--foreground)]">Order produk</h2>
+              <span className="text-sm text-[color:var(--foreground-soft)]">{transactions.length} transaksi</span>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {transactions.map((order: any) => {
-                const productName = order.product_snapshot?.name || "Produk";
-                const manageHref = `/waiting-payment/${encodeURIComponent(order.order_id)}${order.public_order_code ? `?resi=${encodeURIComponent(order.public_order_code)}&type=transaction` : ""}`;
-                const invoiceHref = `/api/invoice/${encodeURIComponent(order.order_id)}?${new URLSearchParams({
-                  ...(order.public_order_code ? { resi: String(order.public_order_code) } : {}),
-                  download: "1"
-                }).toString()}`;
+            {transactions.length === 0 ? (
+              <div className="surface-card text-sm text-[color:var(--foreground-soft)]">Belum ada order produk. Setelah checkout berhasil, riwayatnya akan muncul di sini.</div>
+            ) : (
+              <div className="space-y-4">
+                {transactions.map((order: any) => {
+                  const productName = order.product_snapshot?.name || "Produk";
+                  const manageHref = `/waiting-payment/${encodeURIComponent(order.order_id)}${order.public_order_code ? `?resi=${encodeURIComponent(order.public_order_code)}&type=transaction` : ""}`;
+                  const invoiceHref = `/api/invoice/${encodeURIComponent(order.order_id)}?${new URLSearchParams({
+                    ...(order.public_order_code ? { resi: String(order.public_order_code) } : {}),
+                    download: "1"
+                  }).toString()}`;
 
-                return (
-                  <article key={order.id} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_70px_rgba(2,6,23,0.24)]">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{order.status || "pending"}</span>
-                          <span>{new Date(order.created_at).toLocaleString("id-ID")}</span>
+                  return (
+                    <article key={order.id} className="surface-card">
+                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-black uppercase tracking-[0.24em] text-[color:var(--foreground-muted)]">
+                            <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--card-subtle)] px-3 py-1">{order.status || "pending"}</span>
+                            <span>{new Date(order.created_at).toLocaleString("id-ID")}</span>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-[color:var(--foreground)]">{productName}</h3>
+                            <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-soft)]">
+                              Order ID: <span className="font-semibold text-[color:var(--foreground)]">{order.order_id}</span>
+                              {order.public_order_code ? <> · Resi: <span className="font-semibold text-[color:var(--accent-strong)]">{order.public_order_code}</span></> : null}
+                            </p>
+                            {order.variant_name ? <p className="mt-1 text-sm text-[color:var(--foreground-soft)]">Varian: {order.variant_name}</p> : null}
+                          </div>
                         </div>
+
+                        <div className="w-full max-w-[250px] rounded-[24px] border border-[color:var(--border)] bg-[color:var(--card-subtle)] p-4 text-sm text-[color:var(--foreground-soft)]">
+                          <div className="brand-kicker">Total pembayaran</div>
+                          <div className="mt-2 text-2xl font-black text-[color:var(--foreground)]">{formatRupiah(Number(order.final_amount || 0))}</div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Link href={manageHref} className="secondary-button h-10 px-4 text-xs">Kelola order</Link>
+                            <a href={invoiceHref} className="secondary-button h-10 px-4 text-xs"><FileText className="mr-2 h-4 w-4" />Invoice</a>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black text-[color:var(--foreground)]">Top up saldo</h2>
+              <span className="text-sm text-[color:var(--foreground-soft)]">{topups.length} transaksi</span>
+            </div>
+            {topups.length === 0 ? (
+              <div className="surface-card text-sm text-[color:var(--foreground-soft)]">Belum ada transaksi top up.</div>
+            ) : (
+              <div className="space-y-4">
+                {topups.map((topup: any) => {
+                  const manageHref = `/waiting-payment/${encodeURIComponent(topup.order_id)}${topup.public_order_code ? `?resi=${encodeURIComponent(topup.public_order_code)}&type=topup` : `?type=topup`}`;
+                  return (
+                    <article key={topup.id} className="surface-card">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
-                          <h3 className="text-xl font-black text-white">{productName}</h3>
-                          <p className="mt-2 text-sm leading-7 text-slate-300">
-                            Order ID: <span className="font-semibold text-white">{order.order_id}</span>
-                            {order.public_order_code ? (
-                              <>
-                                {" "}• Resi: <span className="font-semibold text-brand-200">{order.public_order_code}</span>
-                              </>
-                            ) : null}
+                          <div className="brand-kicker flex items-center gap-2"><Wallet className="h-3.5 w-3.5" /> Top up</div>
+                          <h3 className="mt-2 text-lg font-black text-[color:var(--foreground)]">{formatRupiah(Number(topup.amount || 0))}</h3>
+                          <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-soft)]">
+                            Order ID: <span className="font-semibold text-[color:var(--foreground)]">{topup.order_id}</span>
+                            {topup.public_order_code ? <> · Resi: <span className="font-semibold text-[color:var(--accent-strong)]">{topup.public_order_code}</span></> : null}
                           </p>
-                          {order.variant_name ? <p className="mt-1 text-sm text-slate-400">Varian: {order.variant_name}</p> : null}
+                          <p className="mt-1 text-sm text-[color:var(--foreground-soft)]">{new Date(topup.created_at).toLocaleString("id-ID")}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--card-subtle)] px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-[color:var(--foreground)]">{topup.status || "pending"}</span>
+                          <Link href={manageHref} className="secondary-button h-10 px-4 text-xs"><RefreshCw className="mr-2 h-4 w-4" />Lihat status</Link>
                         </div>
                       </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
-                      <div className="min-w-[220px] rounded-[24px] border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300">
-                        <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Total pembayaran</div>
-                        <div className="mt-2 text-2xl font-black text-white">{formatRupiah(Number(order.final_amount || 0))}</div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Link href={manageHref} className="rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 font-semibold text-brand-200 transition hover:bg-brand-500/20">
-                            Kelola order
-                          </Link>
-                          <a href={invoiceHref} className="rounded-full border border-white/10 px-3 py-1.5 font-semibold text-slate-200 transition hover:border-white/30 hover:bg-white/5">
-                            Invoice PDF
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+            <div className="surface-card">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--accent-strong)]">
+                  <BadgeCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-[color:var(--foreground)]">Riwayat lebih nyaman dipantau</h3>
+                  <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-soft)]">Blok order dan top up sekarang dipisah jelas, jadi pelanggan tidak perlu scroll layar yang terlalu padat.</p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-black text-white">Top up saldo</h2>
-            <span className="text-sm text-slate-400">{topups.length} transaksi</span>
           </div>
-          {topups.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
-              Belum ada transaksi top up.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {topups.map((topup: any) => {
-                const manageHref = `/waiting-payment/${encodeURIComponent(topup.order_id)}${topup.public_order_code ? `?resi=${encodeURIComponent(topup.public_order_code)}&type=topup` : `?type=topup`}`;
-                return (
-                  <article key={topup.id} className="rounded-[26px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_60px_rgba(2,6,23,0.22)]">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500">Top up</div>
-                        <h3 className="mt-2 text-lg font-black text-white">{formatRupiah(Number(topup.amount || 0))}</h3>
-                        <p className="mt-2 text-sm leading-7 text-slate-300">
-                          Order ID: <span className="font-semibold text-white">{topup.order_id}</span>
-                          {topup.public_order_code ? (
-                            <>
-                              {" "}• Resi: <span className="font-semibold text-brand-200">{topup.public_order_code}</span>
-                            </>
-                          ) : null}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-400">{new Date(topup.created_at).toLocaleString("id-ID")}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-slate-200">
-                          {topup.status || "pending"}
-                        </span>
-                        <Link href={manageHref} className="rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1.5 text-sm font-semibold text-brand-200 transition hover:bg-brand-500/20">
-                          Lihat status
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

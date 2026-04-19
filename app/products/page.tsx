@@ -1,8 +1,8 @@
+import { Boxes, LayoutGrid, ShieldCheck, Tags } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-
 
 export default async function ProductsPage() {
   const admin = createAdminSupabaseClient();
@@ -20,39 +20,55 @@ export default async function ProductsPage() {
   }));
 
   return (
-    <div className="container py-8 md:py-10">
-      <section className="surface-card shine-border overflow-hidden px-6 py-8 sm:px-8 lg:px-10 reveal-up">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr] lg:items-end">
-          <div className="space-y-4">
-            <div className="inline-flex rounded-full border border-amber-200 bg-amber-50/90 px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-amber-700 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-300">
-              Katalog produk
+    <div className="page-section">
+      <div className="site-container space-y-8">
+        <section className="brand-shell mesh-backdrop reveal-up">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr] lg:items-end">
+            <div className="space-y-4">
+              <div className="badge-chip">Katalog produk</div>
+              <h1 className="max-w-3xl text-4xl font-black tracking-tight text-[color:var(--foreground)] md:text-5xl">
+                Semua produk kini tampil <span className="text-gradient">lebih rapih, ringan, dan gampang dibandingkan</span>
+              </h1>
+              <p className="max-w-3xl text-sm leading-8 text-[color:var(--foreground-soft)] md:text-base">
+                Referensi gaya UI baru diadaptasi ke katalog ini supaya pelanggan langsung fokus ke nama produk, harga,
+                kategori, dan tombol beli tanpa tampilan yang terasa ramai.
+              </p>
             </div>
-            <h1 className="max-w-3xl text-3xl font-black tracking-tight text-slate-950 md:text-5xl dark:text-white">
-              Pilih produk dan paket yang paling <span className="text-gradient">pas buat kebutuhanmu</span>
-            </h1>
-            <p className="max-w-3xl text-sm leading-8 text-slate-600 md:text-base dark:text-slate-300">
-              Semua produk ditata lebih rapi supaya gampang dibandingkan. Kalau satu produk punya beberapa pilihan durasi atau tipe, semuanya bisa langsung kamu lihat tanpa bikin halaman terasa padat.
-            </p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="brand-card">
+                <div className="flex items-center gap-2 text-sm font-black text-[color:var(--foreground)]"><LayoutGrid className="h-4 w-4 text-[color:var(--accent-strong)]" /> Kartu lebih jelas</div>
+                <p className="mt-2 text-sm leading-7">Heading, harga, stok, dan status populer kini dipisah dengan hirarki visual yang lebih enak dibaca.</p>
+              </div>
+              <div className="brand-card">
+                <div className="flex items-center gap-2 text-sm font-black text-[color:var(--foreground)]"><ShieldCheck className="h-4 w-4 text-[color:var(--accent-strong)]" /> Lebih meyakinkan</div>
+                <p className="mt-2 text-sm leading-7">Warna CTA, badge, dan grid dibuat lebih konsisten agar pengalaman belanja terasa profesional.</p>
+              </div>
+            </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-              <div className="text-sm font-black text-slate-950 dark:text-white">Paket lebih jelas</div>
-              <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">Harga awal, tipe paket, dan detail singkat ditampilkan lebih rapi supaya user lebih yakin saat memilih.</p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="stat-card">
+              <div className="flex items-center gap-2 brand-kicker"><Boxes className="h-3.5 w-3.5" /> Total produk</div>
+              <div className="mt-3 text-3xl font-black">{list.length}</div>
             </div>
-            <div className="rounded-[28px] border border-slate-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-              <div className="text-sm font-black text-slate-950 dark:text-white">Admin tetap fleksibel</div>
-              <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">Varian paket masih bisa ditambah dan diatur dari dashboard tanpa mengubah struktur utama yang sudah ada.</p>
+            <div className="stat-card">
+              <div className="flex items-center gap-2 brand-kicker"><Tags className="h-3.5 w-3.5" /> Featured</div>
+              <div className="mt-3 text-3xl font-black">{list.filter((item: any) => item.featured).length}</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center gap-2 brand-kicker"><LayoutGrid className="h-3.5 w-3.5" /> Varian aktif</div>
+              <div className="mt-3 text-3xl font-black">{list.reduce((sum: number, item: any) => sum + (item.product_variants?.length || 0), 0)}</div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {list.map((product: any) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </section>
+        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {list.map((product: any) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </section>
+      </div>
     </div>
   );
 }

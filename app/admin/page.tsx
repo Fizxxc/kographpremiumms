@@ -40,41 +40,40 @@ export default async function AdminPage() {
   if (role !== "admin") redirect("/");
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
-      <section className="rounded-[32px] border border-primary/10 bg-[#031227] p-6 shadow-[0_24px_100px_rgba(2,6,23,0.35)] sm:p-8">
-        <div className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-xs font-bold uppercase tracking-[0.35em] text-primary">
-          Panel admin
-        </div>
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_320px] lg:items-end">
-          <div>
-            <h1 className="text-4xl font-black text-white sm:text-5xl">Kelola produk, penjualan, dan pengiriman credential dari satu tempat.</h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Semua kebutuhan operasional toko ditata dalam satu dashboard agar Anda bisa memantau performa produk,
-              mengatur stok, mengelola promosi, dan memproses pesanan tanpa pindah-pindah halaman.
-            </p>
+    <div className="page-section">
+      <div className="site-container space-y-8">
+        <section className="brand-shell mesh-backdrop">
+          <div className="badge-chip">Panel admin</div>
+          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_320px] lg:items-end">
+            <div>
+              <h1 className="text-4xl font-black text-[color:var(--foreground)] sm:text-5xl">Kelola produk, penjualan, dan pengiriman credential dari satu tempat.</h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-[color:var(--foreground-soft)] sm:text-lg">
+                Bagian admin ikut diperbarui secara visual supaya dashboard utama lebih modern, rapi, dan nyaman dipakai untuk aktivitas operasional harian.
+              </p>
+            </div>
+            <div className="brand-card text-sm leading-7 text-[color:var(--foreground-soft)]">
+              Gunakan dashboard ini untuk melihat ringkasan penjualan, memperbarui katalog, mengelola promosi, dan memastikan pengiriman credential berjalan lebih rapi.
+            </div>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm leading-7 text-slate-300">
-            <p>Gunakan dashboard ini untuk melihat ringkasan penjualan, memperbarui katalog, dan memastikan pengiriman credential berjalan lebih rapi.</p>
-          </div>
+        </section>
+
+        <AdminOverview
+          products={(products || []) as any}
+          transactions={(transactions || []) as any}
+          topups={(topups || []) as any}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <BulkCredentialUpload products={(products || []) as any} />
+          <CouponManager initialCoupons={(coupons || []) as any} />
         </div>
-      </section>
 
-      <AdminOverview
-        products={(products || []) as any}
-        transactions={(transactions || []) as any}
-        topups={(topups || []) as any}
-      />
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <BulkCredentialUpload products={(products || []) as any} />
-        <CouponManager initialCoupons={(coupons || []) as any} />
+        <ProductManager products={(products || []) as any} />
+        <VariantManager products={(products || []) as any} variants={(variants || []) as any} />
+        <BroadcastPanel />
+        <SiteSettingsManager popups={(popups || []) as any} alerts={(alerts || []) as any} />
+        <LiveChatAdminPanel />
       </div>
-
-      <ProductManager products={(products || []) as any} />
-      <VariantManager products={(products || []) as any} variants={(variants || []) as any} />
-      <BroadcastPanel />
-      <SiteSettingsManager popups={(popups || []) as any} alerts={(alerts || []) as any} />
-      <LiveChatAdminPanel />
     </div>
   );
 }

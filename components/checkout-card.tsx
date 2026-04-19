@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CircleDollarSign, PackageCheck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { formatRupiah } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -46,26 +47,15 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
   }, [comparePrice, displayPrice]);
 
   async function handleCheckout() {
-    if (!buyerName.trim()) {
-      toast.error("Nama pembeli wajib diisi.");
-      return;
-    }
-    if (!buyerEmail.trim()) {
-      toast.error("Email pembeli wajib diisi.");
-      return;
-    }
-    if (isOutOfStock) {
-      toast.error("Stok produk sedang habis.");
-      return;
-    }
+    if (!buyerName.trim()) return toast.error("Nama pembeli wajib diisi.");
+    if (!buyerEmail.trim()) return toast.error("Email pembeli wajib diisi.");
+    if (isOutOfStock) return toast.error("Stok produk sedang habis.");
 
     try {
       setSubmitting(true);
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
           buyerName,
@@ -85,9 +75,7 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
       });
 
       const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result?.error || "Gagal membuat order.");
-      }
+      if (!response.ok) throw new Error(result?.error || "Gagal membuat order.");
 
       toast.success("Order berhasil dibuat. Silakan lanjutkan pembayaran.");
       router.push(result.waitingPaymentUrl || result.paymentStatusUrl);
@@ -99,19 +87,26 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
   }
 
   return (
-    <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_22px_80px_rgba(15,23,42,0.1)] dark:border-white/10 dark:bg-slate-950/70 sm:p-7">
-      <div className="space-y-2">
-        <div className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">Mulai order</div>
-        <div className="text-2xl font-black text-slate-950 dark:text-white">{formatRupiah(displayPrice)}</div>
-        {comparePrice > displayPrice ? <div className="text-sm text-slate-400 line-through">{formatRupiah(comparePrice)}</div> : null}
-        {savings > 0 ? <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-300">Hemat {formatRupiah(savings)}</div> : null}
-      </div>
+    <section className="surface-card">
+      <div className="rounded-[24px] border border-[#f4c73f] bg-[linear-gradient(135deg,#fff6cc_0%,#fffdf4_100%)] p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="brand-kicker">Mulai order</div>
+            <div className="mt-2 text-3xl font-black text-[color:var(--foreground)]">{formatRupiah(displayPrice)}</div>
+            {comparePrice > displayPrice ? <div className="mt-1 text-sm text-[color:var(--foreground-muted)] line-through">{formatRupiah(comparePrice)}</div> : null}
+            {savings > 0 ? <div className="mt-1 text-sm font-semibold text-emerald-600">Hemat {formatRupiah(savings)}</div> : null}
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+            <CircleDollarSign className="h-5 w-5 text-[color:var(--accent-strong)]" />
+          </div>
+        </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-300">
-        <span className={`rounded-full px-3 py-1.5 ${isOutOfStock ? "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-300" : "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-300"}`}>
-          {isOutOfStock ? "Stok habis" : `Stok tersedia ${stock}`}
-        </span>
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 dark:border-white/10 dark:bg-white/5">Terjual {soldCount}</span>
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
+          <span className={`rounded-full px-3 py-1.5 ${isOutOfStock ? "border border-rose-200 bg-rose-50 text-rose-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+            {isOutOfStock ? "Stok habis" : `Stok tersedia ${stock}`}
+          </span>
+          <span className="rounded-full border border-[color:var(--border)] bg-white px-3 py-1.5 text-[color:var(--foreground)]">Terjual {soldCount}</span>
+        </div>
       </div>
 
       <div className="mt-6 space-y-5">
@@ -122,7 +117,7 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
               id="variant"
               value={selectedVariantId}
               onChange={(event) => setSelectedVariantId(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-100"
+              className="w-full rounded-2xl border border-[color:var(--border)] bg-white px-4 py-3 text-sm font-medium text-[color:var(--foreground)] outline-none transition focus:border-[#f3b203] focus:ring-4 focus:ring-[#f3b203]/10 dark:bg-[color:var(--card-subtle)]"
             >
               {variants.map((variant) => (
                 <option key={variant.id} value={variant.id}>
@@ -158,9 +153,16 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
           {isOutOfStock ? "Stok sedang habis" : submitting ? "Memproses..." : "Lanjut bayar QRIS"}
         </Button>
 
-        <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
-          Setelah checkout dibuat, Anda akan diarahkan ke halaman pembayaran untuk scan QRIS, memantau status order, dan mengunduh invoice bila diperlukan.
-        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="brand-card flex items-start gap-3">
+            <ShoppingCart className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" />
+            <p className="text-xs leading-6 text-[color:var(--foreground)]">Form checkout sekarang lebih sederhana dan fokus ke data penting.</p>
+          </div>
+          <div className="brand-card flex items-start gap-3">
+            <PackageCheck className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" />
+            <p className="text-xs leading-6 text-[color:var(--foreground)]">Setelah dibuat, Anda langsung diarahkan ke halaman QRIS dan status pembayaran.</p>
+          </div>
+        </div>
       </div>
     </section>
   );

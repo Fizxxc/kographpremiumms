@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SearchCheck, ShieldCheck, Ticket } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 
 const statusBadge: Record<string, string> = {
-  settlement: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
-  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-400/15 dark:text-yellow-300",
-  capture: "bg-yellow-100 text-yellow-700 dark:bg-yellow-400/15 dark:text-yellow-300",
-  expire: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300",
-  cancel: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300",
-  deny: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300"
+  settlement: "bg-emerald-100 text-emerald-700",
+  pending: "bg-yellow-100 text-yellow-700",
+  capture: "bg-yellow-100 text-yellow-700",
+  expire: "bg-rose-100 text-rose-700",
+  cancel: "bg-rose-100 text-rose-700",
+  deny: "bg-rose-100 text-rose-700"
 };
 
 type OrderLookupClientProps = {
@@ -29,15 +30,9 @@ export default function OrderLookupClient({ initialResi = "" }: OrderLookupClien
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/public-order-lookup?resi=${encodeURIComponent(cleanResi)}`, {
-        cache: "no-store"
-      });
+      const response = await fetch(`/api/public-order-lookup?resi=${encodeURIComponent(cleanResi)}`, { cache: "no-store" });
       const json = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(String(json.error || "Resi tidak ditemukan."));
-      }
-
+      if (!response.ok) throw new Error(String(json.error || "Resi tidak ditemukan."));
       setResult(json);
       setError(null);
     } catch (error: any) {
@@ -49,123 +44,91 @@ export default function OrderLookupClient({ initialResi = "" }: OrderLookupClien
   }
 
   useEffect(() => {
-    if (initialResi) {
-      lookup(initialResi);
-    }
+    if (initialResi) lookup(initialResi);
   }, [initialResi]);
 
   return (
-    <div className="container py-10">
-      <div className="mx-auto max-w-5xl space-y-6 reveal-up">
-        <div className="surface-card overflow-hidden p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[1fr,0.92fr] lg:items-center">
-            <div className="space-y-4">
-              <div className="inline-flex rounded-full border border-amber-200 bg-amber-50/90 px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-amber-700 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-300">
-                Cek pesanan
-              </div>
-
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-5xl dark:text-white">
-                  Masukkan resi untuk melihat status pesanan
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-8 text-slate-600 dark:text-slate-300">
-                  Gunakan resi pesanan untuk melihat status transaksi, detail pembayaran, dan informasi order terbaru
-                  dengan lebih praktis.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  value={resi}
-                  onChange={(event) => setResi(event.target.value.toUpperCase())}
-                  placeholder="Contoh: RESI-AB12CD34"
-                  className="h-14 flex-1 rounded-full border border-slate-200/80 bg-white/80 px-5 text-sm font-medium text-slate-900 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-200/50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-amber-300/40 dark:focus:ring-amber-300/10"
-                />
-                <button
-                  type="button"
-                  onClick={() => lookup(resi)}
-                  disabled={loading}
-                  className="inline-flex h-14 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200"
-                >
-                  {loading ? "Mencari..." : "Cek status"}
-                </button>
-              </div>
-
-              {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300">
-                  {error}
+    <div className="page-section">
+      <div className="site-container">
+        <div className="mx-auto max-w-5xl space-y-6 reveal-up">
+          <div className="brand-shell mesh-backdrop overflow-hidden">
+            <div className="grid gap-8 lg:grid-cols-[1fr,0.88fr] lg:items-center">
+              <div className="space-y-4">
+                <div className="badge-chip">Cek pesanan</div>
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight text-[color:var(--foreground)] md:text-5xl">Masukkan resi untuk melihat status transaksi dengan cepat.</h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-8 text-[color:var(--foreground-soft)]">
+                    Tampilan halaman lookup juga dirapikan supaya pelanggan tinggal fokus ke input resi, hasil status, dan tombol menuju detail pembayaran.
+                  </p>
                 </div>
-              ) : null}
-            </div>
 
-            <div className="rounded-[32px] border border-slate-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
-              <div className="text-xs font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                Langkah cepat
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    value={resi}
+                    onChange={(event) => setResi(event.target.value.toUpperCase())}
+                    placeholder="Contoh: RESI-AB12CD34"
+                    className="h-14 flex-1 rounded-full border border-[color:var(--border)] bg-white px-5 text-sm font-medium text-[color:var(--foreground)] outline-none transition focus:border-[#f3b203] focus:ring-4 focus:ring-[#f3b203]/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => lookup(resi)}
+                    disabled={loading}
+                    className="primary-button h-14 px-7"
+                  >
+                    {loading ? "Mencari..." : "Cek status"}
+                  </button>
+                </div>
+
+                {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div> : null}
               </div>
-              <ol className="mt-4 space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                <li>1. Ambil resi dari halaman pembayaran atau email konfirmasi transaksi.</li>
-                <li>2. Masukkan resi pada kolom di sebelah kiri.</li>
-                <li>3. Sistem akan menampilkan status terbaru pesanan secara otomatis.</li>
-              </ol>
+
+              <div className="brand-panel">
+                <div className="brand-kicker">Langkah cepat</div>
+                <div className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--foreground)]">
+                  <div className="brand-card flex items-start gap-3"><Ticket className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" /> Ambil resi dari halaman pembayaran atau email konfirmasi transaksi.</div>
+                  <div className="brand-card flex items-start gap-3"><SearchCheck className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" /> Masukkan resi pada kolom di sebelah kiri.</div>
+                  <div className="brand-card flex items-start gap-3"><ShieldCheck className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" /> Sistem akan menampilkan status terbaru pesanan secara otomatis.</div>
+                </div>
+              </div>
             </div>
           </div>
+
+          {result ? (
+            <div className="surface-card reveal-up">
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className={`inline-flex rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.24em] ${statusBadge[String(result.status || "pending")] || statusBadge.pending}`}>
+                    {String(result.status || "pending")}
+                  </div>
+                  <h2 className="mt-4 text-2xl font-black tracking-tight text-[color:var(--foreground)]">{result.productName}</h2>
+                  {result.variantName ? <p className="mt-1 text-sm text-[color:var(--foreground-soft)]">{result.variantName}</p> : null}
+                </div>
+
+                <Link
+                  href={`/waiting-payment/${result.orderId}?resi=${encodeURIComponent(result.publicOrderCode)}&type=${encodeURIComponent(result.type)}`}
+                  className="secondary-button"
+                >
+                  Buka detail pembayaran
+                </Link>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div className="brand-card">
+                  <div className="brand-kicker">Order ID</div>
+                  <div className="mt-2 text-sm font-bold text-[color:var(--foreground)]">{result.orderId}</div>
+                </div>
+                <div className="brand-card">
+                  <div className="brand-kicker">Resi</div>
+                  <div className="mt-2 text-sm font-bold text-[color:var(--foreground)]">{result.publicOrderCode}</div>
+                </div>
+                <div className="brand-card">
+                  <div className="brand-kicker">Total</div>
+                  <div className="mt-2 text-sm font-bold text-[color:var(--foreground)]">{formatRupiah(Number(result.amount || 0))}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
-
-        {result ? (
-          <div className="surface-card p-6 sm:p-8 reveal-up">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div
-                  className={`inline-flex rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.24em] ${
-                    statusBadge[String(result.status || "pending")] || statusBadge.pending
-                  }`}
-                >
-                  {String(result.status || "pending")}
-                </div>
-
-                <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {result.productName}
-                </h2>
-
-                {result.variantName ? (
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{result.variantName}</p>
-                ) : null}
-              </div>
-
-              <Link
-                href={`/waiting-payment/${result.orderId}?resi=${encodeURIComponent(result.publicOrderCode)}&type=${encodeURIComponent(result.type)}`}
-                className="inline-flex items-center justify-center rounded-full border border-slate-200/80 bg-white/80 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-amber-300/30 dark:hover:bg-white/10"
-              >
-                Buka detail pembayaran
-              </Link>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-white/10 dark:bg-white/5">
-                <div className="text-xs font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                  Order ID
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-950 dark:text-white">{result.orderId}</div>
-              </div>
-
-              <div className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-white/10 dark:bg-white/5">
-                <div className="text-xs font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                  Resi
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-950 dark:text-white">{result.publicOrderCode}</div>
-              </div>
-
-              <div className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-4 dark:border-white/10 dark:bg-white/5">
-                <div className="text-xs font-black uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
-                  Total
-                </div>
-                <div className="mt-2 text-sm font-bold text-slate-950 dark:text-white">
-                  {formatRupiah(Number(result.amount || 0))}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );
