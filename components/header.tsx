@@ -31,7 +31,7 @@ export default async function Header() {
               </div>
               <div className="min-w-0">
                 <div className="truncate text-[18px] font-black tracking-[-0.03em] text-white">{SITE.name}</div>
-                <p className="truncate text-xs text-slate-400">Store aplikasi premium modern</p>
+                <p className="truncate text-xs text-slate-400">Premium Apps Web</p>
               </div>
             </Link>
 
@@ -77,7 +77,7 @@ export default async function Header() {
           <HeaderNav isLoggedIn={isLoggedIn} isAdmin={isAdmin} accountLabel={accountLabel} />
           <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400">
             <ShieldCheck className="h-3.5 w-3.5 text-yellow-300" />
-            Checkout production tetap aman, yang dirombak hanya tampilannya.
+            Data dan akun akan aman dan sudah terEnkripsi oleh sistem.
           </div>
         </div>
       </div>

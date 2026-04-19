@@ -69,8 +69,8 @@ export default async function HomePage() {
           </div>
           <div className="stat-card" style={{ background: "linear-gradient(135deg, var(--accent-soft), var(--mesh-b))" }}>
             <div className="brand-kicker">Catatan utama</div>
-            <div className="mt-3 text-3xl font-black" style={{ color: "var(--foreground)" }}>Tampilan lebih matang</div>
-            <p className="mt-2 text-sm leading-7" style={{ color: "var(--foreground-soft)" }}>Visual diperhalus supaya toko terasa lebih rapi, lebih serius, dan lebih enak dipakai berulang kali.</p>
+            <div className="mt-3 text-3xl font-black" style={{ color: "var(--foreground)" }}>Keamanan Pegguna</div>
+            <p className="mt-2 text-sm leading-7" style={{ color: "var(--foreground-soft)" }}>Kami menerapkan prinsip untuk menjaga data rahasia pengguna kami.</p>
           </div>
         </div>
 
