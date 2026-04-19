@@ -1,33 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const slides = [
   {
-    tag: "Promo mingguan",
-    title: "Upgrade akun premium dengan tampilan store yang terasa lebih terpercaya.",
-    body: "Landing page dibuat gelap, lebih modern, dan lebih rapi agar first impression pengunjung naik sejak detik pertama.",
+    tag: "Alur belanja yang jelas",
+    title: "Pilih layanan yang dibutuhkan, lanjut bayar, lalu pantau status pesanan dari halaman yang sama.",
+    body: "Tampilan depan dibuat untuk membantu pengunjung paham alurnya sejak awal: lihat produk, pilih paket, isi data seperlunya, selesaikan pembayaran, lalu cek progres pesanan tanpa kebingungan.",
     primary: { href: "/products", label: "Lihat semua produk" },
-    secondary: { href: "/cek-pesanan", label: "Cek transaksi" },
-    accent: "from-yellow-400/20 via-amber-500/10 to-cyan-400/10"
+    secondary: { href: "/cek-pesanan", label: "Cek transaksi" }
   },
   {
-    tag: "Best seller",
-    title: "Netflix, Canva, CapCut, ChatGPT, Spotify, dan tools kerja dalam satu etalase premium.",
-    body: "Grid produk dibuat lebih profesional dengan hover glow, badge populer, dan harga yang lebih gampang dipindai.",
-    primary: { href: "/products", label: "Belanja sekarang" },
-    secondary: { href: "/orders", label: "Lihat pesanan" },
-    accent: "from-cyan-400/20 via-sky-500/10 to-yellow-400/10"
+    tag: "Lebih tenang saat order",
+    title: "Informasi dibuat lebih rapi supaya pengguna baru langsung tahu langkah berikutnya tanpa banyak tanya.",
+    body: "Kami sengaja menata ulang kata-kata dan susunan visual agar setiap tombol, badge, dan informasi harga terasa lebih masuk akal serta tidak terkesan seperti halaman yang dibuat asal cepat jadi.",
+    primary: { href: "/products", label: "Mulai belanja" },
+    secondary: { href: "/faq", label: "Lihat cara kerja" }
   },
   {
-    tag: "Checkout rapi",
-    title: "Alur pilih produk, bayar, sampai cek status kini tampil lebih clean dan konsisten.",
-    body: "Visual baru difokuskan agar user cepat paham: navigasi jelas, spacing lega, dan komponen terasa lebih matang seperti store premium modern.",
-    primary: { href: "/products", label: "Mulai dari katalog" },
-    secondary: { href: "/faq", label: "Pelajari alur" },
-    accent: "from-fuchsia-400/20 via-violet-500/10 to-cyan-400/10"
+    tag: "Banner bisa diganti",
+    title: "Area promo utama sekarang memakai banner PNG agar mudah disesuaikan dengan desain brand Anda sendiri.",
+    body: "Cukup ganti file banner di folder public tanpa perlu mengubah struktur section. Bagian ini sengaja dibuat simpel supaya cocok untuk promo mingguan, best seller, atau informasi layanan terbaru.",
+    primary: { href: "/products", label: "Buka katalog" },
+    secondary: { href: "/orders", label: "Riwayat pesanan" }
   }
 ];
 
@@ -37,49 +35,53 @@ export default function HeroCarousel() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setActive((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, 5500);
     return () => window.clearInterval(timer);
   }, []);
 
   const slide = slides[active];
 
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0f172a] shadow-[0_35px_90px_-45px_rgba(0,0,0,0.8)]">
-      <div className={`absolute inset-0 bg-gradient-to-br ${slide.accent}`} />
-      <div className="absolute -right-16 top-8 h-48 w-48 rounded-full bg-yellow-400/10 blur-3xl" />
-      <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
+    <section
+      className="relative overflow-hidden rounded-[28px] border shadow-[var(--shadow)]"
+      style={{ background: "var(--card-strong)", borderColor: "var(--border)" }}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,var(--mesh-a),transparent_26%),radial-gradient(circle_at_bottom_right,var(--mesh-b),transparent_22%)]" />
 
-      <div className="relative grid min-h-[360px] gap-8 p-6 sm:min-h-[420px] sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end lg:p-10">
-        <div className="flex flex-col justify-end">
-          <div className="inline-flex w-max rounded-full border border-yellow-400/20 bg-yellow-400/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.28em] text-yellow-300">
+      <div className="relative grid min-h-[380px] gap-8 p-6 sm:min-h-[440px] sm:p-8 xl:grid-cols-[1fr_0.92fr] xl:items-center xl:p-10">
+        <div className="flex flex-col justify-center">
+          <div className="inline-flex w-max rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.28em]" style={{ borderColor: "rgba(248, 201, 51, 0.22)", background: "var(--accent-soft)", color: "color-mix(in srgb, var(--foreground) 72%, var(--accent-strong))" }}>
             {slide.tag}
           </div>
-          <h1 className="mt-5 max-w-3xl text-3xl font-black leading-tight text-white sm:text-5xl">
+          <h1 className="mt-5 max-w-3xl text-3xl font-black leading-tight sm:text-5xl" style={{ color: "var(--foreground)" }}>
             {slide.title}
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-300 sm:text-base">
+          <p className="mt-4 max-w-2xl text-sm leading-8 sm:text-base" style={{ color: "var(--foreground-soft)" }}>
             {slide.body}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href={slide.primary.href} className="primary-button">
               {slide.primary.label}
             </Link>
-            <Link href={slide.secondary.href} className="secondary-button border-white/10 bg-white/5 text-white hover:bg-white/10">
+            <Link href={slide.secondary.href} className="secondary-button">
               {slide.secondary.label}
             </Link>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <div className="rounded-[24px] border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-            <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-400">Keunggulan visual</div>
-            <div className="mt-4 text-2xl font-black text-white">Dark modern UI</div>
-            <p className="mt-2 text-sm leading-7 text-slate-300">Nuansa lebih premium dengan layout bersih, rounded card, dan pencahayaan lembut.</p>
-          </div>
-          <div className="rounded-[24px] border border-white/10 bg-white/5 p-5 backdrop-blur-md">
-            <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-400">Fokus utama</div>
-            <div className="mt-4 text-2xl font-black text-white">Konversi lebih jelas</div>
-            <p className="mt-2 text-sm leading-7 text-slate-300">CTA, badge promo, kategori, dan grid produk dibuat lebih mudah dipahami pengguna baru.</p>
+        <div className="relative overflow-hidden rounded-[24px] border" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
+          <Image
+            src="/banner-home.png"
+            alt="Banner promo utama Kograph Premium"
+            width={1200}
+            height={800}
+            className="h-full min-h-[260px] w-full object-cover"
+            priority
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0b0e11]/80 via-[#0b0e11]/35 to-transparent p-5">
+            <div className="rounded-[18px] border px-4 py-3 backdrop-blur-sm" style={{ borderColor: "rgba(255,255,255,0.10)", background: "rgba(11,14,17,0.42)", color: "#f8fafc" }}>
+              Ganti file ini dengan desain banner PNG Anda di <span className="font-bold">public/banner-home.png</span>.
+            </div>
           </div>
         </div>
       </div>
@@ -88,7 +90,8 @@ export default function HeroCarousel() {
         <button
           type="button"
           onClick={() => setActive((prev) => (prev - 1 + slides.length) % slides.length)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/60 text-white transition hover:bg-slate-900"
+          className="flex h-11 w-11 items-center justify-center rounded-full border transition hover:opacity-90"
+          style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--foreground)" }}
           aria-label="Slide sebelumnya"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -96,7 +99,8 @@ export default function HeroCarousel() {
         <button
           type="button"
           onClick={() => setActive((prev) => (prev + 1) % slides.length)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-slate-950/60 text-white transition hover:bg-slate-900"
+          className="flex h-11 w-11 items-center justify-center rounded-full border transition hover:opacity-90"
+          style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--foreground)" }}
           aria-label="Slide berikutnya"
         >
           <ChevronRight className="h-5 w-5" />
@@ -109,7 +113,8 @@ export default function HeroCarousel() {
             key={index}
             type="button"
             onClick={() => setActive(index)}
-            className={`h-2.5 rounded-full transition-all ${index === active ? "w-10 bg-yellow-400" : "w-2.5 bg-white/35"}`}
+            className="h-2.5 rounded-full transition-all"
+            style={{ width: index === active ? 40 : 10, background: index === active ? "var(--accent-strong)" : "color-mix(in srgb, var(--foreground) 24%, transparent)" }}
             aria-label={`Pindah ke slide ${index + 1}`}
           />
         ))}

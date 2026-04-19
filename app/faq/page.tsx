@@ -1,7 +1,7 @@
 const faqs = [
   {
     q: "Bagaimana cara mengecek status pesanan?",
-    a: "Gunakan halaman cek pesanan dengan resi order yang Anda terima setelah checkout. Anda juga bisa memakai bot Telegram @KographcekBot untuk pengecekan cepat."
+    a: "Gunakan halaman cek pesanan dengan resi order yang Anda terima setelah checkout. Anda juga bisa memakai bot Telegram @cs_KographBot untuk pengecekan cepat."
   },
   {
     q: "Apakah invoice tersedia setelah pembayaran berhasil?",

@@ -3,12 +3,12 @@ export const SITE = {
   url: process.env.NEXT_PUBLIC_APP_URL || "https://kographpremiapp.vercel.app",
   description:
     "Marketplace layanan digital dengan pengalaman belanja yang rapi, nyaman, dan mudah dipantau dari awal sampai pesanan selesai.",
-  botUsername: "@KographcekBot",
+  botUsername: "@cs_KographBot",
   autoOrderBotUsername: "@KographmarketsBot",
   support: {
     whatsapp: process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "",
-    email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@kographpremium.com",
-    telegram: process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM || "@KographcekBot"
+    email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "kographh@gmail.com",
+    telegram: process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM || "@cs_KographBot"
   },
   socials: {
     instagram: process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || "",

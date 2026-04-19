@@ -500,7 +500,7 @@ export async function generateInvoicePdf(input: InvoicePdfInput) {
     }
   );
 
-  page.drawText("Support: kographh@gmail.com • Telegram: @KographSupportBot", {
+  page.drawText("Support: kographh@gmail.com • Telegram: @cs_KographBot", {
     x: PAGE.marginX,
     y: 56,
     font: fontRegular,
