@@ -15,9 +15,9 @@ export default function ReportPage() {
               Email support<br />
               <span className="text-base font-black">{SITE.support.email}</span>
             </a>
-            <a href={`https://t.me/${SITE.botUsername}`} target="_blank" rel="noreferrer" className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-5 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-amber-300/30 dark:hover:bg-white/10">
+            <a href={`https://t.me/${SITE.support.telegram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 p-5 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-amber-300/30 dark:hover:bg-white/10">
               Telegram bot<br />
-              <span className="text-base font-black">@{SITE.botUsername}</span>
+              <span className="text-base font-black">{SITE.support.telegram}</span>
             </a>
           </div>
         </div>

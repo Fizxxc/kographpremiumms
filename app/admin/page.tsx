@@ -8,6 +8,7 @@ import VariantManager from "@/components/admin/variant-manager";
 import { CouponManager } from "@/components/admin/coupon-manager";
 import { BulkCredentialUpload } from "@/components/admin/bulk-credential-upload";
 import { AdminOverview } from "@/components/admin/admin-overview";
+import BannerManager from "@/components/admin/banner-manager";
 
 export default async function AdminPage() {
   const supabase = createServerSupabaseClient();
@@ -17,7 +18,7 @@ export default async function AdminPage() {
 
   if (!user) redirect("/login?redirectTo=/admin");
 
-  const [{ data: roles }, { data: products }, { data: popups }, { data: alerts }, { data: variants }, { data: coupons }, { data: transactions }, { data: topups }] = await Promise.all([
+  const [{ data: roles }, { data: products }, { data: popups }, { data: alerts }, { data: variants }, { data: coupons }, { data: transactions }, { data: topups }, { data: banners }] = await Promise.all([
     supabase.from("profiles").select("role").eq("id", user.id).limit(1),
     supabase.from("products").select("*").order("created_at", { ascending: false }),
     supabase.from("site_popups").select("*").order("created_at", { ascending: false }),
@@ -33,7 +34,8 @@ export default async function AdminPage() {
       .from("wallet_topups")
       .select("order_id,status,amount,created_at")
       .order("created_at", { ascending: false })
-      .limit(50)
+      .limit(50),
+    supabase.from("site_banners").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: false })
   ]);
 
   const role = roles?.[0]?.role;
@@ -68,6 +70,7 @@ export default async function AdminPage() {
           <CouponManager initialCoupons={(coupons || []) as any} />
         </div>
 
+        <BannerManager banners={(banners || []) as any} />
         <ProductManager products={(products || []) as any} />
         <VariantManager products={(products || []) as any} variants={(variants || []) as any} />
         <BroadcastPanel />

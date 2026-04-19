@@ -4,11 +4,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/format";
 import ProductCard from "@/components/product-card";
 import HeroCarousel from "@/components/landing/hero-carousel";
+import type { HeroBannerItem } from "@/components/landing/hero-carousel";
 import CategoryRow from "@/components/landing/category-row";
 
 export default async function HomePage() {
   const supabase = createServerSupabaseClient();
-  const [{ data: featuredProducts }, { count: activeProductCount }] = await Promise.all([
+  const [{ data: featuredProducts }, { count: activeProductCount }, { data: heroBanners }] = await Promise.all([
     supabase
       .from("products")
       .select("*")
@@ -16,11 +17,21 @@ export default async function HomePage() {
       .order("featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(8),
-    supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true)
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("site_banners").select("id,title,image_url,button_href,sort_order,is_active").eq("is_active", true).order("sort_order", { ascending: true }).order("created_at", { ascending: false })
   ]);
 
   const prices = (featuredProducts || []).map((item: any) => Number(item.price || 0)).filter((value: number) => value > 0);
   const minPrice = prices.length ? Math.min(...prices) : 0;
+
+  const normalizedHeroBanners: HeroBannerItem[] = ((heroBanners as any[]) || [])
+    .filter((item: any) => item?.image_url)
+    .map((item: any) => ({
+      id: String(item.id),
+      title: item.title || null,
+      image_url: String(item.image_url),
+      button_href: item.button_href || null
+    }));
 
   const valueProps = [
     {
@@ -43,7 +54,7 @@ export default async function HomePage() {
   return (
     <div className="page-section pb-20 pt-6 sm:pt-8">
       <div className="site-container space-y-10 sm:space-y-12">
-        <HeroCarousel />
+        <HeroCarousel slides={normalizedHeroBanners} />
 
         <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-[1.15fr_0.85fr_0.85fr]">
           <div className="stat-card">

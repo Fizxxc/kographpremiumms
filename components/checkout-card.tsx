@@ -88,24 +88,33 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
 
   return (
     <section className="surface-card">
-      <div className="rounded-[24px] border border-[#f4c73f] bg-[linear-gradient(135deg,#fff6cc_0%,#fffdf4_100%)] p-5">
+      <div className="rounded-[26px] border p-5 text-white" style={{ borderColor: "rgba(243, 178, 3, 0.18)", background: "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(20,30,58,0.98) 55%, rgba(10,18,34,0.98) 100%)" }}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="brand-kicker">Mulai order</div>
-            <div className="mt-2 text-3xl font-black text-[color:var(--foreground)]">{formatRupiah(displayPrice)}</div>
-            {comparePrice > displayPrice ? <div className="mt-1 text-sm text-[color:var(--foreground-muted)] line-through">{formatRupiah(comparePrice)}</div> : null}
-            {savings > 0 ? <div className="mt-1 text-sm font-semibold text-emerald-600">Hemat {formatRupiah(savings)}</div> : null}
+            <div className="inline-flex rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.28em]" style={{ borderColor: "rgba(243,178,3,0.20)", background: "rgba(243,178,3,0.10)", color: "#fde68a" }}>
+              Mulai order
+            </div>
+            <div className="mt-4 text-3xl font-black text-white">{formatRupiah(displayPrice)}</div>
+            {comparePrice > displayPrice ? <div className="mt-1 text-sm text-slate-400 line-through">{formatRupiah(comparePrice)}</div> : null}
+            {savings > 0 ? <div className="mt-2 text-sm font-semibold text-emerald-300">Hemat {formatRupiah(savings)}</div> : null}
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-            <CircleDollarSign className="h-5 w-5 text-[color:var(--accent-strong)]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border shadow-sm" style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.08)" }}>
+            <CircleDollarSign className="h-5 w-5 text-amber-300" />
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
-          <span className={`rounded-full px-3 py-1.5 ${isOutOfStock ? "border border-rose-200 bg-rose-50 text-rose-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+          <span className={`rounded-full px-3 py-1.5 ${isOutOfStock ? "border border-rose-300/30 bg-rose-400/10 text-rose-200" : "border border-emerald-300/25 bg-emerald-400/10 text-emerald-200"}`}>
             {isOutOfStock ? "Stok habis" : `Stok tersedia ${stock}`}
           </span>
-          <span className="rounded-full border border-[color:var(--border)] bg-white px-3 py-1.5 text-[color:var(--foreground)]">Terjual {soldCount}</span>
+          <span className="rounded-full border px-3 py-1.5 text-slate-200" style={{ borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+            Terjual {soldCount}
+          </span>
+          {selectedVariant ? (
+            <span className="rounded-full border px-3 py-1.5 text-slate-200" style={{ borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.06)" }}>
+              {selectedVariant.name}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -156,11 +165,11 @@ export default function CheckoutCard({ product }: CheckoutCardProps) {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="brand-card flex items-start gap-3">
             <ShoppingCart className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" />
-            <p className="text-xs leading-6 text-[color:var(--foreground)]">Form checkout sekarang lebih sederhana dan fokus ke data penting.</p>
+            <p className="text-xs leading-6 text-[color:var(--foreground)]">Isi nama, email aktif, lalu tambahkan catatan bila ada detail yang ingin disampaikan sebelum proses order.</p>
           </div>
           <div className="brand-card flex items-start gap-3">
             <PackageCheck className="mt-0.5 h-4 w-4 text-[color:var(--accent-strong)]" />
-            <p className="text-xs leading-6 text-[color:var(--foreground)]">Setelah dibuat, Anda langsung diarahkan ke halaman QRIS dan status pembayaran.</p>
+            <p className="text-xs leading-6 text-[color:var(--foreground)]">Setelah order dibuat, Anda langsung diarahkan ke halaman QRIS dan status pembayaran untuk lanjut proses checkout.</p>
           </div>
         </div>
       </div>
