@@ -1,36 +1,24 @@
 export const SITE = {
   name: "Kograph Premium",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://kographpremiapp.vercel.app",
   description:
-    "Marketplace akun premium, panel Pterodactyl, dan saldo deposit dengan proses yang lebih cepat, aman, dan rapi untuk pengguna.",
-  botUsername: "KographcekBot",
-  autoOrderBotUsername: "KographmarketsBot",
+    "Marketplace layanan digital dengan alur belanja yang rapi, pembayaran yang jelas, dan proses pesanan yang nyaman diikuti.",
+  botUsername: "@KographcekBot",
+  autoOrderBotUsername: "@KographmarketsBot",
   support: {
-    whatsapp: "6288991114939",
-    email: "kographh@gmail.com",
-    telegram: "KographcekBot"
+    whatsapp: process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "",
+    email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@kographpremium.com",
+    telegram: process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM || "@KographcekBot"
   },
   socials: {
-    instagram: "https://instagram.com/kographh.id",
-    tiktok: "https://www.tiktok.com/@kfizzxxd",
-    telegram: "https://t.me/KographcekBot"
+    instagram: process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || "",
+    tiktok: process.env.NEXT_PUBLIC_SOCIAL_TIKTOK || "",
+    telegram: process.env.NEXT_PUBLIC_SOCIAL_TELEGRAM || "@KographmarketsBot"
   },
   legal: {
-    privacy: "/privacy-policy",
-    terms: "/terms",
-    faq: "/faq",
-    report: "/report"
+    termsUrl: "/terms",
+    privacyUrl: "/privacy-policy",
+    faqUrl: "/faq",
+    reportIssueUrl: "/report-issue"
   }
-};
-
-export const NAV_CATEGORIES = [
-  "Streaming",
-  "AI Tools",
-  "Design",
-  "Gaming",
-  "Productivity",
-  "VPN",
-  "Music",
-  "Panel Pterodactyl"
-];
-
-export const QUICK_TOPUP_AMOUNTS = [25000, 50000, 100000, 250000];
+} as const;
