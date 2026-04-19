@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Loader2, Pencil, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { ExternalLink, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -54,6 +54,7 @@ export function ProductManager({ products }: { products: Product[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
+  const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -87,6 +88,29 @@ export function ProductManager({ products }: { products: Product[] }) {
       router.refresh();
     } catch (error: any) {
       toast.error(error?.message || "Gagal menghapus produk.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+
+  async function createProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    try {
+      const formData = new FormData(event.currentTarget);
+      const response = await fetch(`/api/admin/products`, {
+        method: "POST",
+        body: formData
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(json.error || "Gagal menambahkan produk baru."));
+      toast.success("Produk baru berhasil ditambahkan.");
+      setCreating(false);
+      router.refresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Gagal menambahkan produk baru.");
     } finally {
       setLoading(false);
     }
@@ -129,9 +153,15 @@ export function ProductManager({ products }: { products: Product[] }) {
               </p>
             </div>
 
-            <div className="relative w-full max-w-md">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama produk, kategori, atau tipe layanan" className="pl-11" />
+            <div className="flex w-full max-w-2xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <div className="relative w-full sm:max-w-md">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama produk, kategori, atau tipe layanan" className="pl-11" />
+              </div>
+              <Button type="button" className="h-12 rounded-full bg-amber-300 px-5 text-slate-950 hover:bg-amber-200 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200" onClick={() => setCreating(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Tambah produk
+              </Button>
             </div>
           </div>
 
@@ -272,6 +302,125 @@ export function ProductManager({ products }: { products: Product[] }) {
           ) : null}
         </div>
       </Card>
+
+
+      {creating ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,_rgba(3,12,26,0.98)_0%,_rgba(8,24,52,0.97)_58%,_rgba(12,34,68,0.96)_100%)] p-5 text-white shadow-[0_40px_120px_-55px_rgba(0,0,0,0.95)] sm:p-6 lg:p-7">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.24em] text-emerald-200">
+                  <Plus className="h-3.5 w-3.5" />
+                  Tambah produk
+                </div>
+                <div className="mt-3 text-2xl font-black tracking-tight text-white">Buat produk baru untuk katalog</div>
+                <p className="mt-2 text-sm text-slate-300">Isi data penting produk di sini. Setelah disimpan, produk langsung masuk ke dashboard dan katalog sesuai statusnya.</p>
+              </div>
+              <button type="button" className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white" onClick={() => setCreating(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={createProduct} className="grid gap-6 xl:grid-cols-[0.72fr,1fr]">
+              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex aspect-square items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/25 p-6 text-center text-sm leading-6 text-slate-400">
+                  Upload gambar produk utama di panel kanan.
+                  <br />
+                  Format yang disarankan: PNG atau JPG dengan rasio rapi agar katalog terlihat konsisten.
+                </div>
+                <div className="mt-4 grid gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/25 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Catatan</div>
+                    <div className="mt-1 text-sm leading-6 text-slate-300">Untuk produk panel, stok akan otomatis dibuat 0 karena sistem dianggap auto ready.</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/25 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Tips cepat</div>
+                    <div className="mt-1 text-sm leading-6 text-slate-300">Pakai nama yang singkat, harga jelas, dan deskripsi yang langsung menjelaskan benefit ke pembeli.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-slate-950/35 p-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Nama produk</label>
+                    <Input name="name" placeholder="Contoh: Netflix Private 1 Bulan" required />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Kategori</label>
+                    <Input name="category" placeholder="Streaming / Game / Work" required />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Tipe layanan</label>
+                    <select name="service_type" defaultValue="credential" className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-2 focus:ring-amber-300/10">
+                      <option className="bg-slate-900 text-white" value="credential">Credential / Akun</option>
+                      <option className="bg-slate-900 text-white" value="design">Jasa / Design</option>
+                      <option className="bg-slate-900 text-white" value="pterodactyl">Panel / Auto provisioning</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Harga</label>
+                    <Input name="price" type="number" min="0" placeholder="0" required />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Stok</label>
+                    <Input name="stock" type="number" min="0" placeholder="0" defaultValue={0} required />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Sold count</label>
+                    <Input name="sold_count" type="number" min="0" placeholder="0" defaultValue={0} />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Link eksternal</label>
+                    <Input name="external_link" placeholder="https://..." />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Gambar produk</label>
+                    <Input name="image" type="file" accept="image/*" required />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Deskripsi</label>
+                    <Textarea name="description" rows={5} placeholder="Jelaskan isi layanan, durasi, aturan, atau benefit utama produk ini." required />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Support admin IDs</label>
+                    <Input name="support_admin_ids" placeholder="Pisahkan dengan koma jika lebih dari satu" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-400">Pterodactyl config (JSON)</label>
+                    <Textarea name="pterodactyl_config" rows={5} placeholder='Contoh: {"nest_id": 1, "egg_id": 5}' />
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200">
+                    <input type="checkbox" name="featured" defaultChecked />
+                    Featured
+                  </label>
+                  <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200">
+                    <input type="checkbox" name="live_chat_enabled" defaultChecked />
+                    Live chat aktif
+                  </label>
+                  <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200">
+                    <input type="checkbox" name="is_active" defaultChecked />
+                    Tampilkan produk
+                  </label>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Button type="submit" disabled={loading} className="rounded-full bg-amber-300 px-6 text-slate-950 hover:bg-amber-200 dark:bg-amber-300 dark:text-slate-950 dark:hover:bg-amber-200">
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                    {loading ? "Menyimpan..." : "Buat produk"}
+                  </Button>
+                  <Button type="button" variant="secondary" className="rounded-full px-6" onClick={() => setCreating(false)}>
+                    Tutup
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {editing ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm">

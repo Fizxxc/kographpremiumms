@@ -28,11 +28,11 @@ export async function POST(request: Request) {
     const category = String(formData.get("category") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
     const price = Number(formData.get("price") ?? 0);
-    const featured = String(formData.get("featured") ?? "") === "true";
+    const featured = formData.get("featured") != null;
     const service_type = String(formData.get("service_type") ?? "credential").trim();
     const sold_count = Number(formData.get("sold_count") ?? 0);
     const stockInput = Number(formData.get("stock") ?? 0);
-    const is_active = String(formData.get("is_active") ?? "true") !== "false";
+    const is_active = formData.get("is_active") != null;
     const pterodactyl_config = parsePterodactylConfig(formData.get("pterodactyl_config"));
     const support_admin_ids = String(formData.get("support_admin_ids") ?? "").split(",").map((x) => x.trim()).filter(Boolean);
     const live_chat_enabled = formData.get("live_chat_enabled") != null;
