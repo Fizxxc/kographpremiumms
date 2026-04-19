@@ -21,7 +21,7 @@ export default function HeaderNav() {
 
   return (
     <>
-      <nav className="hidden items-center gap-1 rounded-full border border-[color:var(--border)] bg-white px-2 py-1 shadow-[var(--shadow-soft)] md:flex">
+      <nav className="hidden items-center gap-1 md:flex">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           return (
@@ -31,8 +31,8 @@ export default function HeaderNav() {
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold transition",
                 active
-                  ? "bg-[linear-gradient(135deg,#ffd95c_0%,#f3b203_100%)] text-slate-950"
-                  : "text-[color:var(--foreground-soft)] hover:bg-[color:var(--card-subtle)] hover:text-[color:var(--foreground)]"
+                  ? "bg-white/10 text-white shadow-[0_0_0_1px_rgba(250,204,21,0.12)]"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
               )}
             >
               {item.label}
@@ -45,7 +45,7 @@ export default function HeaderNav() {
         <Button
           size="icon"
           variant="secondary"
-          className="rounded-2xl"
+          className="rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10"
           onClick={() => setOpen(true)}
           aria-label="Buka menu"
         >
@@ -56,17 +56,17 @@ export default function HeaderNav() {
       {open ? (
         <div className="fixed inset-0 z-[80] md:hidden">
           <button
-            className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
             onClick={() => setOpen(false)}
             aria-label="Tutup menu"
           />
-          <div className="absolute right-0 top-0 h-full w-[300px] border-l border-[color:var(--border)] bg-[color:var(--background-soft)] p-5 shadow-2xl">
+          <div className="absolute right-0 top-0 h-full w-[320px] border-l border-white/10 bg-[#0b0e11] p-5 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <div className="brand-kicker">Navigasi</div>
-                <div className="mt-2 text-lg font-black text-[color:var(--foreground)]">Kograph Premium</div>
+                <div className="brand-kicker text-slate-500">Navigasi</div>
+                <div className="mt-2 text-lg font-black text-white">Kograph Premium</div>
               </div>
-              <Button size="icon" variant="secondary" className="rounded-2xl" onClick={() => setOpen(false)}>
+              <Button size="icon" variant="secondary" className="rounded-2xl border-white/10 bg-white/5 text-white" onClick={() => setOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -82,14 +82,19 @@ export default function HeaderNav() {
                     className={cn(
                       "block rounded-2xl px-4 py-3 text-sm font-semibold transition",
                       active
-                        ? "bg-[linear-gradient(135deg,#ffd95c_0%,#f3b203_100%)] text-slate-950"
-                        : "border border-[color:var(--border)] bg-white text-[color:var(--foreground)] hover:bg-[color:var(--card-subtle)]"
+                        ? "bg-white/10 text-white"
+                        : "border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
                     )}
                   >
                     {item.label}
                   </Link>
                 );
               })}
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Link href="/login" onClick={() => setOpen(false)} className="secondary-button h-11 border-white/10 bg-white/5 text-white">Login</Link>
+              <Link href="/register" onClick={() => setOpen(false)} className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-cyan-400 px-5 text-sm font-bold text-slate-950">Register</Link>
             </div>
           </div>
         </div>

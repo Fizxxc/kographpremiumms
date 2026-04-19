@@ -1,45 +1,52 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircleQuestion, ShieldCheck, TicketPercent } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Search, ShieldCheck } from "lucide-react";
 import HeaderNav from "@/components/header-nav";
 import { SITE } from "@/lib/constants";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:var(--border)] bg-white/88 backdrop-blur-xl dark:bg-[color:var(--card-strong)]/92">
-      <div className="border-b border-[color:var(--border)] bg-[color:var(--card-subtle)]">
-        <div className="site-container flex h-11 items-center justify-between gap-4 text-xs font-semibold text-[color:var(--foreground-soft)]">
-          <div className="flex items-center gap-5 overflow-x-auto whitespace-nowrap scrollbar-thin">
-            <span className="inline-flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-[color:var(--accent-strong)]" /> Aman & rapi untuk transaksi digital</span>
-            <span className="hidden sm:inline-flex items-center gap-2"><TicketPercent className="h-3.5 w-3.5 text-[color:var(--accent-strong)]" /> Tampilan katalog baru lebih mudah dipilih</span>
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b0e11]/88 backdrop-blur-xl">
+      <div className="site-container py-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-5">
+          <div className="flex items-center justify-between gap-4 lg:min-w-[250px]">
+            <Link href="/" className="group flex min-w-0 items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.75)]">
+                <Image src="/logo.png" alt={SITE.name} width={40} height={40} className="h-9 w-9 object-contain" />
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-[18px] font-black tracking-[-0.03em] text-white">{SITE.name}</div>
+                <p className="truncate text-xs text-slate-400">Store aplikasi premium modern</p>
+              </div>
+            </Link>
+
+            <div className="lg:hidden">
+              <HeaderNav />
+            </div>
           </div>
-          <Link href="/faq" className="hidden items-center gap-2 transition hover:text-[color:var(--foreground)] sm:inline-flex">
-            <MessageCircleQuestion className="h-3.5 w-3.5" /> Bantuan
-          </Link>
+
+          <form action="/products" className="relative flex-1 lg:max-w-2xl">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              name="q"
+              placeholder="Cari Netflix, Canva, ChatGPT, Spotify, CapCut..."
+              className="h-12 w-full rounded-full border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-yellow-400/30 focus:bg-white/8"
+            />
+          </form>
+
+          <div className="hidden items-center gap-3 lg:flex">
+            <Link href="/login" className="secondary-button h-11 border-white/10 bg-white/5 px-5 text-white hover:bg-white/10">Login</Link>
+            <Link href="/register" className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-cyan-400 px-5 text-sm font-bold text-slate-950 shadow-[0_18px_40px_-24px_rgba(245,158,11,0.65)] transition hover:-translate-y-0.5">Register</Link>
+          </div>
         </div>
-      </div>
 
-      <div className="site-container flex h-20 items-center justify-between gap-4">
-        <Link href="/" className="group flex min-w-0 items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--border)] bg-white shadow-[var(--shadow-soft)]">
-            <Image src="/logo.png" alt={SITE.name} width={40} height={40} className="h-9 w-9 object-contain" />
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-[18px] font-black tracking-[-0.03em] text-[color:var(--foreground)]">{SITE.name}</div>
-            <p className="truncate text-xs text-[color:var(--foreground-soft)]">Marketplace digital modern, rapih, dan cepat.</p>
-          </div>
-        </Link>
-
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="mt-4 hidden items-center justify-between gap-4 border-t border-white/10 pt-4 lg:flex">
           <HeaderNav />
-          <ThemeToggle />
-          <Link href="/login" className="secondary-button h-11 px-5">Masuk</Link>
-        </div>
-
-        <div className="flex items-center gap-2 lg:hidden">
-          <ThemeToggle />
-          <HeaderNav />
+          <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400">
+            <ShieldCheck className="h-3.5 w-3.5 text-yellow-300" />
+            Checkout production tetap aman, yang dirombak hanya tampilannya.
+          </div>
         </div>
       </div>
     </header>

@@ -3,10 +3,10 @@ export default function ThemeScript() {
     (function () {
       try {
         var stored = localStorage.getItem('kp-theme');
-        var theme = stored || 'light';
+        var theme = stored || 'dark';
         var root = document.documentElement;
-        if (theme === 'dark') root.classList.add('dark');
-        else root.classList.remove('dark');
+        root.classList.remove('light', 'dark');
+        root.classList.add(theme);
       } catch (e) {}
     })();
   `;

@@ -9,16 +9,18 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const stored = (localStorage.getItem("theme") as "light" | "dark" | null) || "dark";
-    root.classList.toggle("dark", stored === "dark");
+    const stored = (localStorage.getItem("kp-theme") as "light" | "dark" | null) || "dark";
+    root.classList.remove("light", "dark");
+    root.classList.add(stored);
     setTheme(stored);
     setMounted(true);
   }, []);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.classList.toggle("dark", next === "dark");
-    localStorage.setItem("theme", next);
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(next);
+    localStorage.setItem("kp-theme", next);
     setTheme(next);
   };
 
