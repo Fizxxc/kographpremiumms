@@ -19,7 +19,7 @@ export const SITE = {
     termsUrl: "/terms",
     privacyUrl: "/privacy-policy",
     faqUrl: "/faq",
-    reportIssueUrl: "/report-issue"
+    reportIssueUrl: "/report"
   }
 } as const;
 

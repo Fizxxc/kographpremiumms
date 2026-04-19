@@ -19,7 +19,7 @@ const footerGroups = [
       { href: SITE.legal.termsUrl, label: "Syarat & ketentuan" },
       { href: SITE.legal.privacyUrl, label: "Kebijakan privasi" },
       { href: "/faq", label: "Cara kerja & FAQ" },
-      { href: "/report-issue", label: "Laporkan kendala" }
+      { href: "/report", label: "Laporkan kendala" }
     ]
   },
   {
