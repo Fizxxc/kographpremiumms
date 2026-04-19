@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { SITE } from "@/lib/constants";
 import { CheckCircle2, Copy, ExternalLink, Loader2, MessageCircleMore, QrCode, RefreshCw, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +23,15 @@ function normalizeStatus(status?: string | null) {
   return "Menunggu pembayaran";
 }
 
+function InfoBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="brand-card min-w-0 py-4">
+      <div className="brand-kicker">{label}</div>
+      <div className="mt-2 break-words text-lg font-black text-[color:var(--foreground)]">{value}</div>
+    </div>
+  );
+}
+
 export function WaitingPaymentClient({ transaction, product, credential }: WaitingPaymentClientProps) {
   const [status, setStatus] = useState(String(transaction.status || "pending"));
   const [loading, setLoading] = useState(false);
@@ -33,20 +40,18 @@ export function WaitingPaymentClient({ transaction, product, credential }: Waiti
   const qrString = String(fulfillmentData.payment_qr_string || "");
   const backupPayUrl = String(fulfillmentData.payment_fallback_url || transaction.snap_token || "");
   const waitingUrl = `/api/public-order-status/${transaction.order_id}?resi=${transaction.public_order_code}`;
-  const qrImageSrc = qrString
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(qrString)}`
-    : "";
+  const qrImageSrc = qrString ? `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(qrString)}` : "";
 
-const panelInfoText = useMemo(() => {
-  if (!fulfillmentData) return "";
-  return [
-    `Panel URL: ${fulfillmentData.panel_url || "-"}`,
-    `Username: ${fulfillmentData.panel_username || "-"}`,
-    `Email: ${fulfillmentData.panel_email || "-"}`,
-    `Password: ${fulfillmentData.panel_password || "-"}`,
-    `Server UUID: ${fulfillmentData.server_uuid || "-"}`
-  ].join("\\n");
-}, [fulfillmentData]);
+  const panelInfoText = useMemo(() => {
+    if (!fulfillmentData) return "";
+    return [
+      `Panel URL: ${fulfillmentData.panel_url || "-"}`,
+      `Username: ${fulfillmentData.panel_username || "-"}`,
+      `Email: ${fulfillmentData.panel_email || "-"}`,
+      `Password: ${fulfillmentData.panel_password || "-"}`,
+      `Server UUID: ${fulfillmentData.server_uuid || "-"}`
+    ].join("\n");
+  }, [fulfillmentData]);
 
   useEffect(() => {
     if (status === "settlement") return;
@@ -94,145 +99,193 @@ const panelInfoText = useMemo(() => {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <Card className="space-y-6">
-        <div>
-          <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Order ID</div>
-          <div className="mt-2 text-2xl font-black text-white">{transaction.order_id}</div>
-          <div className="mt-3 text-sm text-slate-300">
-            {product?.name || transaction.product_snapshot?.product_name || "Produk Premium"}
-          </div>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2">
-          <InfoBox label="Status" value={normalizeStatus(status)} />
-          <InfoBox label="Total Bayar" value={formatRupiah(Number(transaction.final_amount || transaction.amount || 0))} />
-          <InfoBox label="Resi Publik" value={transaction.public_order_code || "-"} />
-          <InfoBox label="Gateway" value="Pakasir" />
-        </div>
-
-        {status !== "settlement" && qrImageSrc ? (
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-brand-600/20 p-3 text-brand-200"><QrCode className="h-5 w-5" /></div>
+    <div className="page-section pt-6">
+      <div className="site-container">
+        <div className="brand-shell mesh-backdrop grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
+          <section className="space-y-6">
+            <div className="space-y-4">
+              <span className="brand-pill">Menunggu pembayaran</span>
               <div>
-                <div className="font-semibold text-white">QRIS Dinamis</div>
-                <div className="text-sm text-slate-300">Scan QRIS ini dari mobile banking atau e-wallet Anda.</div>
+                <h1 className="text-balance text-4xl font-black leading-[0.92] text-[color:var(--foreground)] sm:text-6xl">
+                  Selesaikan pembayaran Anda
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-8 text-[color:var(--foreground-soft)]">
+                  QRIS sudah tersedia. Silakan selesaikan pembayaran agar pesanan dapat segera diproses. Setelah berhasil,
+                  status akan diperbarui otomatis di halaman ini.
+                </p>
               </div>
             </div>
-            <div className="mt-5 rounded-[28px] bg-white p-4">
-              <img src={qrImageSrc} alt="QRIS Dinamis" className="mx-auto h-72 w-72 max-w-full rounded-2xl object-contain" />
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <InfoBox label="Order ID" value={transaction.order_id} />
+              <InfoBox label="Resi" value={transaction.public_order_code || "-"} />
+              <InfoBox label="Status layanan" value={normalizeStatus(status)} />
+              <InfoBox label="Produk" value={product?.name || transaction.product_snapshot?.product_name || "Produk Premium"} />
+              <InfoBox label="Total" value={formatRupiah(Number(transaction.final_amount || transaction.amount || 0))} />
+              <InfoBox label="Gateway" value="Pakasir" />
             </div>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Button variant="secondary" onClick={() => copyText(qrString, "QR string")}>
-                <Copy className="mr-2 h-4 w-4" />Copy QR String
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={refreshStatus}
+                disabled={loading}
+                className="h-12 rounded-full border-[color:var(--border)] bg-[color:var(--card)] px-5 text-[color:var(--foreground)]"
+              >
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Refresh status
               </Button>
               {backupPayUrl ? (
                 <a href={backupPayUrl} target="_blank" rel="noreferrer">
-                  <Button>
-                    <ExternalLink className="mr-2 h-4 w-4" />Buka Halaman Bayar
+                  <Button className="h-12 rounded-full bg-[color:var(--accent)] px-5 font-bold text-slate-950">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Buka halaman pembayaran
                   </Button>
                 </a>
               ) : null}
             </div>
-          </div>
-        ) : null}
 
-        {status === "settlement" && (
-          <div className="rounded-[28px] border border-emerald-400/20 bg-emerald-400/10 p-5">
-            <div className="flex items-center gap-3 text-emerald-200">
-              <CheckCircle2 className="h-5 w-5" />
-              <div className="font-semibold">Pembayaran sudah terverifikasi</div>
-            </div>
-            <div className="mt-3 text-sm text-slate-200">
-              Sistem sedang menampilkan data layanan Anda. Bila halaman belum berubah, tekan refresh status sekali lagi.
-            </div>
-          </div>
-        )}
+            {(credential?.account_data || fulfillmentData.panel_url) && (
+              <div className="brand-panel">
+                <div className="flex items-center gap-3 text-[color:var(--foreground)]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black">Data layanan</h2>
+                    <p className="text-sm text-[color:var(--foreground-soft)]">Detail layanan akan tampil rapi setelah pembayaran terverifikasi.</p>
+                  </div>
+                </div>
 
-        {(credential?.account_data || fulfillmentData.panel_url) && (
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-            <div className="text-lg font-semibold text-white">Data layanan</div>
-            {credential?.account_data ? (
-              <div className="mt-4 whitespace-pre-wrap rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm text-slate-200">{credential.account_data}</div>
-            ) : null}
-            {fulfillmentData.panel_url ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <InfoBox label="Panel URL" value={fulfillmentData.panel_url || "-"} />
-                <InfoBox label="Username" value={fulfillmentData.panel_username || "-"} />
-                <InfoBox label="Email Login" value={fulfillmentData.panel_email || "-"} />
-                <InfoBox label="Password Login" value={fulfillmentData.panel_password || "-"} />
+                {credential?.account_data ? (
+                  <div className="mt-5 rounded-[24px] border border-[color:var(--border)] bg-slate-950/90 p-4 font-mono text-sm leading-7 text-slate-100">
+                    {credential.account_data}
+                  </div>
+                ) : null}
+
+                {fulfillmentData.panel_url ? (
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    <InfoBox label="Panel URL" value={fulfillmentData.panel_url || "-"} />
+                    <InfoBox label="Username" value={fulfillmentData.panel_username || "-"} />
+                    <InfoBox label="Email login" value={fulfillmentData.panel_email || "-"} />
+                    <InfoBox label="Password login" value={fulfillmentData.panel_password || "-"} />
+                  </div>
+                ) : null}
+
+                {fulfillmentData.panel_url ? (
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => copyText(panelInfoText, "Info panel")}
+                      className="h-11 rounded-full border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--foreground)]"
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Salin info panel
+                    </Button>
+                    <a href={fulfillmentData.panel_url} target="_blank" rel="noreferrer">
+                      <Button className="h-11 rounded-full bg-[color:var(--accent)] font-bold text-slate-950">Buka panel</Button>
+                    </a>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-            {fulfillmentData.panel_url ? (
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Button variant="secondary" onClick={() => copyText(panelInfoText, "Info panel")}>
-                  <Copy className="mr-2 h-4 w-4" />Copy Info Panel
-                </Button>
-                <a href={fulfillmentData.panel_url} target="_blank" rel="noreferrer"><Button>Buka Panel</Button></a>
-              </div>
-            ) : null}
-          </div>
-        )}
-      </Card>
+            )}
+          </section>
 
-      <div className="space-y-6">
-        <Card className="space-y-4">
-          <div className="text-lg font-semibold text-white">Status Sinkronisasi</div>
-          <Badge className={status === "settlement" ? "text-emerald-300" : status === "expire" ? "text-rose-300" : "text-amber-300"}>
-            {normalizeStatus(status)}
-          </Badge>
-          <div className="text-sm text-slate-300">Cek juga via Telegram bot <span className="font-semibold text-white">@{SITE.botUsername}</span></div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 font-mono text-sm text-white">/status {transaction.status_token}</div>
-        </Card>
-
-        <Card className="space-y-4 border-brand-500/30 bg-gradient-to-br from-brand-600/20 to-slate-950/90">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-brand-600/20 p-3 text-brand-200"><Wallet className="h-5 w-5" /></div>
+          <aside className="brand-panel space-y-5 border-[rgba(245,207,83,0.24)] bg-[linear-gradient(180deg,rgba(245,207,83,0.08),transparent_26%),var(--card)]">
             <div>
-              <div className="font-semibold text-white">Metode Pembayaran</div>
-              <div className="text-sm text-slate-300">
-                {transaction.payment_method === "balance"
-                  ? "Order ini diproses dari saldo yang tersimpan di web"
-                  : "QRIS dinamis Pakasir dengan pembaruan status otomatis"}
+              <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--card-strong)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[color:var(--foreground-soft)]">
+                <QrCode className="h-3.5 w-3.5" />
+                QRIS siap dipindai
+              </div>
+              <h2 className="mt-4 text-3xl font-black tracking-[-0.04em] text-[color:var(--foreground)]">Bayar dengan QRIS</h2>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">
+                Gunakan aplikasi e-wallet atau mobile banking yang mendukung QRIS untuk menyelesaikan pembayaran.
+              </p>
+            </div>
+
+            {qrImageSrc ? (
+              <div className="rounded-[28px] border border-[color:var(--border)] bg-white p-4 shadow-[var(--shadow-soft)]">
+                <img src={qrImageSrc} alt="QRIS Dinamis" className="mx-auto aspect-square w-full max-w-[320px] rounded-[22px] object-contain" />
+              </div>
+            ) : (
+              <div className="brand-card text-sm leading-7 text-[color:var(--foreground-soft)]">
+                QRIS sedang disiapkan. Silakan refresh status beberapa saat lagi.
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="brand-card py-4">
+                <div className="brand-kicker">Nominal pembayaran</div>
+                <div className="mt-2 text-2xl font-black text-[color:var(--foreground)]">
+                  {formatRupiah(Number(transaction.final_amount || transaction.amount || 0))}
+                </div>
+              </div>
+              <div className="brand-card py-4">
+                <div className="brand-kicker">Berlaku sampai</div>
+                <div className="mt-2 text-lg font-black text-[color:var(--foreground)]">
+                  {transaction.expires_at ? new Date(transaction.expires_at).toLocaleString("id-ID") : "Mengikuti gateway"}
+                </div>
               </div>
             </div>
-          </div>
 
-          {status !== "settlement" && backupPayUrl ? (
-            <a href={backupPayUrl} target="_blank" rel="noreferrer">
-              <Button className="w-full"><ExternalLink className="mr-2 h-4 w-4" />Buka Halaman Bayar</Button>
-            </a>
-          ) : null}
+            <div className="brand-card">
+              <div className="brand-kicker">Petunjuk</div>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">
+                Scan QR di atas langsung dari aplikasi pembayaran Anda. Untuk cadangan, Anda juga dapat menyalin kode QRIS
+                mentah atau membuka halaman pembayaran.
+              </p>
+            </div>
 
-          <Button variant="secondary" className="w-full" onClick={refreshStatus} disabled={loading}>
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Memuat...</> : <><RefreshCw className="mr-2 h-4 w-4" />Refresh Status</>}
-          </Button>
-        </Card>
+            {qrString ? (
+              <div className="brand-card">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="brand-kicker">Kode QRIS cadangan</div>
+                    <p className="mt-2 text-xs leading-6 text-[color:var(--foreground-soft)]">
+                      Ditampilkan rapi di kotak scroll agar tetap mudah dibaca saat dibutuhkan.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => copyText(qrString, "Kode QRIS")}
+                    className="h-10 rounded-full border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--foreground)]"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Salin
+                  </Button>
+                </div>
+                <div className="mt-4 max-h-28 overflow-y-auto rounded-[20px] border border-[color:var(--border)] bg-slate-950/90 p-4 font-mono text-xs leading-6 text-slate-100 scrollbar-thin">
+                  {qrString}
+                </div>
+              </div>
+            ) : null}
 
-        <Card>
-          <div className="flex items-center gap-3">
-            <MessageCircleMore className="h-5 w-5 text-brand-300" />
-            <div className="font-semibold text-white">Bot & Support</div>
-          </div>
-          <div className="mt-4 space-y-3 text-sm text-slate-300">
-            <div>Cek order cepat: <span className="font-semibold text-white">@{SITE.botUsername}</span></div>
-            <div>Auto order & top up: <span className="font-semibold text-white">@{SITE.autoOrderBotUsername}</span></div>
-            <div>Hubungi admin: <span className="font-semibold text-white">@{SITE.support.telegram}</span></div>
-          </div>
-        </Card>
+            <div className="brand-card">
+              <div className="flex items-center gap-3 text-[color:var(--foreground)]">
+                <Wallet className="h-4 w-4 text-[color:var(--accent-strong)]" />
+                <span className="font-semibold">Metode pembayaran</span>
+              </div>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">
+                {transaction.payment_method === "balance"
+                  ? "Order ini diproses dari saldo yang tersimpan di akun Anda."
+                  : "QRIS dinamis Pakasir dengan pembaruan status otomatis setelah pembayaran berhasil."}
+              </p>
+            </div>
+
+            <div className="brand-card">
+              <div className="flex items-center gap-3 text-[color:var(--foreground)]">
+                <MessageCircleMore className="h-4 w-4 text-[color:var(--accent-strong)]" />
+                <span className="font-semibold">Bot & support</span>
+              </div>
+              <div className="mt-3 space-y-2 text-sm text-[color:var(--foreground-soft)]">
+                <div>Cek order cepat: <span className="font-semibold text-[color:var(--foreground)]">{SITE.botUsername}</span></div>
+                <div>Auto order & top up: <span className="font-semibold text-[color:var(--foreground)]">{SITE.autoOrderBotUsername}</span></div>
+                <div>Hubungi admin: <span className="font-semibold text-[color:var(--foreground)]">{SITE.support.telegram}</span></div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function InfoBox({ label, value }: { label: string; value: string }) {
-  const shouldBreakAll = /(url|uuid|token|order id|email|username|password)/i.test(label);
-
-  return (
-    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</div>
-      <div className={`mt-2 text-sm font-semibold text-white ${shouldBreakAll ? "break-all" : "break-words"}`}>{value}</div>
     </div>
   );
 }

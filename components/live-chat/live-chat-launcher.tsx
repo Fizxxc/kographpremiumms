@@ -1,38 +1,63 @@
 "use client";
+
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { MessageCircleMore } from "lucide-react";
+import { MessageCircleMore, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function LiveChatLauncher({ productId }: { productId: string }) {
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState("Halo admin, saya tertarik dengan jasa ini. Saya ingin konsultasi dulu.");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function createRoom() {
-    setLoading(true);
+  const startChat = async () => {
     try {
-      const res = await fetch('/api/live-chat/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId, message }) });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Gagal membuka live chat');
-      toast.success('Live chat berhasil dibuka.');
-      router.push(`/chat/${json.roomId}`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Gagal membuka live chat');
-    } finally { setLoading(false); }
-  }
+      setLoading(true);
+      const response = await fetch("/api/live-chat/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Gagal membuat room live chat.");
+      router.push(`/chat/${data.roomId}`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal membuka live chat.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-5">
-    <div className="flex items-start gap-3">
-      <div className="rounded-2xl bg-emerald-500/15 p-3 text-emerald-300"><MessageCircleMore className="h-5 w-5" /></div>
-      <div className="min-w-0 flex-1">
-        <div className="font-semibold text-white">Live chat dengan admin produk</div>
-        <p className="mt-1 text-sm leading-6 text-slate-300">Cocok untuk jasa desain atau edit. Room akan otomatis diteruskan ke admin yang bertanggung jawab pada produk ini.</p>
+  return (
+    <div className="brand-panel mesh-backdrop overflow-hidden">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-3">
+          <span className="brand-pill">
+            <MessageCircleMore className="h-3.5 w-3.5" />
+            Live chat siap membantu
+          </span>
+          <div>
+            <h3 className="text-2xl font-black tracking-[-0.03em] text-[color:var(--foreground)]">Butuh tanya dulu sebelum checkout?</h3>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-[color:var(--foreground-soft)]">
+              Anda bisa membuka room chat khusus untuk produk ini agar proses konsultasi, pengarahan, dan tindak lanjut
+              pesanan terasa lebih jelas di satu tempat.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+            <Sparkles className="h-3.5 w-3.5" />
+            Cocok untuk briefing, revisi, dan tanya progres pesanan
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          onClick={startChat}
+          disabled={loading}
+          className="h-12 rounded-full bg-[color:var(--accent)] px-6 text-sm font-bold text-slate-950 transition hover:-translate-y-0.5"
+        >
+          {loading ? "Membuka room..." : "Buka live chat"}
+          {!loading ? <ArrowRight className="ml-2 h-4 w-4" /> : null}
+        </Button>
       </div>
     </div>
-    {open ? <div className="mt-4 space-y-3"><Textarea rows={4} value={message} onChange={(e)=>setMessage(e.target.value)} /><div className="grid gap-2 sm:grid-cols-2"><Button variant="secondary" onClick={()=>setOpen(false)}>Tutup</Button><Button onClick={createRoom} disabled={loading}>{loading ? 'Membuka...' : 'Mulai chat sekarang'}</Button></div></div> : <Button className="mt-4 w-full" onClick={()=>setOpen(true)}>Buka live chat</Button>}
-  </div>;
+  );
 }

@@ -1,74 +1,93 @@
 import Link from "next/link";
 import { SITE } from "@/lib/constants";
 
+const footerGroups = [
+  {
+    title: "Belanja",
+    links: [
+      { href: "/products", label: "Semua produk" },
+      { href: "/orders", label: "Cek pesanan" },
+      { href: "/top-up", label: "Top up saldo" }
+    ]
+  },
+  {
+    title: "Bantuan",
+    links: [
+      { href: "/faq", label: "FAQ" },
+      { href: "/help", label: "Pusat bantuan" },
+      { href: `https://t.me/${SITE.botUsername.replace(/^@/, "")}`, label: "Bot cek pesanan" }
+    ]
+  },
+  {
+    title: "Legal",
+    links: [
+      { href: SITE.legal.termsUrl, label: "Syarat & Ketentuan" },
+      { href: SITE.legal.privacyUrl, label: "Kebijakan Privasi" },
+      { href: SITE.legal.reportIssueUrl, label: "Laporkan kendala" }
+    ]
+  }
+];
+
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[#020817]">
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.7fr))]">
-          <div className="space-y-5">
-            <div className="flex items-center gap-4">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl border border-primary/30 bg-primary/10 text-2xl font-black text-primary shadow-[0_18px_50px_rgba(250,204,21,0.15)]">
-                K
+    <footer className="border-t divider-soft pb-10 pt-20">
+      <div className="site-container">
+        <div className="brand-shell mesh-backdrop">
+          <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] text-xl font-black text-[color:var(--accent-strong)]">
+                  K
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-3xl font-black tracking-[-0.04em] text-[color:var(--foreground)]">{SITE.name}</h3>
+                  <p className="max-w-2xl text-base leading-8 text-[color:var(--foreground-soft)]">
+                    Marketplace layanan digital dengan proses yang lebih tenang, tampilan yang bersih, dan alur transaksi
+                    yang dibuat agar tetap nyaman dari awal sampai pesanan selesai.
+                  </p>
+                </div>
               </div>
-              <div>
-                <div className="text-4xl font-black tracking-tight text-white">{SITE.name}</div>
-                <p className="mt-2 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-                  Tempat belanja layanan digital yang dibuat rapi, terasa aman, dan mudah diikuti dari pembayaran sampai pesanan selesai.
+
+              <div className="brand-panel max-w-3xl">
+                <h4 className="text-3xl font-black tracking-[-0.04em] text-[color:var(--foreground)]">
+                  Belanja lebih nyaman, cek status lebih mudah, dan simpan bukti transaksi dengan rapi.
+                </h4>
+                <p className="mt-4 text-base leading-8 text-[color:var(--foreground-soft)]">
+                  Pesanan tervalidasi otomatis, riwayat transaksi lebih mudah dicari kembali, credential tampil rapi di web,
+                  dan invoice PDF bisa diunduh kapan saja saat dibutuhkan.
                 </p>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 text-slate-200 shadow-[0_30px_120px_rgba(2,6,23,0.5)]">
-              <h3 className="text-3xl font-black leading-tight text-white sm:text-4xl">
-                Belanja lebih tenang, simpan bukti transaksi lebih rapi, dan cek pesanan kapan saja.
-              </h3>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-                Setelah pembayaran terverifikasi, status order dapat dipantau dari web. Invoice PDF bisa diunduh kembali,
-                informasi pesanan tetap tertata, dan bantuan tim support lebih mudah dijangkau saat diperlukan.
-              </p>
+            <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-3">
+              {footerGroups.map((group) => (
+                <div key={group.title} className="space-y-4">
+                  <div className="brand-kicker">{group.title}</div>
+                  <div className="space-y-3">
+                    {group.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="block text-sm font-medium text-[color:var(--foreground)] transition hover:translate-x-1 hover:text-[color:var(--accent-strong)]"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-[0.35em] text-slate-400">Belanja</h4>
-            <ul className="mt-5 space-y-4 text-lg text-slate-200">
-              <li><Link href="/products" className="transition hover:text-primary">Semua produk</Link></li>
-              <li><Link href="/cek-pesanan" className="transition hover:text-primary">Cek pesanan</Link></li>
-              <li><Link href="/profile" className="transition hover:text-primary">Isi saldo akun</Link></li>
-              <li><Link href="/orders" className="transition hover:text-primary">Riwayat order</Link></li>
-            </ul>
+          <div className="mt-10 flex flex-col gap-4 border-t divider-soft pt-6 text-sm text-[color:var(--foreground-soft)] sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 {SITE.name}. Semua layanan ditampilkan dengan pendekatan yang lebih rapi dan profesional.</p>
+            <div className="flex flex-wrap gap-4">
+              <span>QRIS dinamis</span>
+              <span>Invoice PDF</span>
+              <span>Credential delivery</span>
+              <span>Desktop & mobile ready</span>
+            </div>
           </div>
-
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-[0.35em] text-slate-400">Bantuan</h4>
-            <ul className="mt-5 space-y-4 text-lg text-slate-200">
-              <li><Link href={SITE.legal.faqUrl} className="transition hover:text-primary">FAQ</Link></li>
-              <li><Link href="/faq" className="transition hover:text-primary">Panduan & FAQ</Link></li>
-              <li><a href={`https://t.me/${SITE.botUsername.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="transition hover:text-primary">Bot cek pesanan</a></li>
-              <li><a href={`https://t.me/${SITE.autoOrderBotUsername.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="transition hover:text-primary">Bot auto order</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-[0.35em] text-slate-400">Legal</h4>
-            <ul className="mt-5 space-y-4 text-lg text-slate-200">
-              <li><Link href={SITE.legal.termsUrl} className="transition hover:text-primary">Terms &amp; Conditions</Link></li>
-              <li><Link href={SITE.legal.privacyUrl} className="transition hover:text-primary">Privacy Policy</Link></li>
-              <li><Link href={SITE.legal.reportIssueUrl} className="transition hover:text-primary">Laporkan kendala</Link></li>
-              <li><a href={`mailto:${SITE.support.email}`} className="transition hover:text-primary">{SITE.support.email}</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 {SITE.name}. Kami merapikan setiap detail agar pengalaman belanja terasa lebih nyaman dan profesional.</p>
-          <p className="flex flex-wrap gap-4">
-            <span>QRIS dinamis</span>
-            <span>Invoice PDF</span>
-            <span>Status pesanan real-time</span>
-            <span>Desktop &amp; mobile friendly</span>
-          </p>
         </div>
       </div>
     </footer>

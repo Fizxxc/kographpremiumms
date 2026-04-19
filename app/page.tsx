@@ -22,131 +22,157 @@ export default async function HomePage() {
   const prices = (featuredProducts || []).map((item: any) => Number(item.price || 0)).filter((value: number) => value > 0);
   const minPrice = prices.length ? Math.min(...prices) : 0;
 
+  const highlights = [
+    {
+      title: "Pilihan lebih tertata",
+      body: "Produk ditampilkan lebih rapi agar proses memilih terasa cepat, jelas, dan tetap nyaman dilihat dari awal."
+    },
+    {
+      title: "Pembayaran lebih meyakinkan",
+      body: "Nominal, QRIS, dan status transaksi ditampilkan dengan alur yang lebih jelas supaya checkout terasa lebih tenang."
+    },
+    {
+      title: "Riwayat lebih mudah dicari",
+      body: "Resi, invoice, dan credential dapat dilihat kembali kapan saja saat Anda perlu mengecek pesanan."
+    }
+  ];
+
+  const serviceFlow = [
+    "Pilih produk atau paket yang paling sesuai dengan kebutuhan Anda.",
+    "Lanjutkan pembayaran melalui QRIS dinamis yang langsung tampil di halaman pembayaran.",
+    "Setelah pembayaran terverifikasi, sistem akan memperbarui status transaksi secara otomatis.",
+    "Simpan resi pesanan untuk memantau progres layanan kapan pun dibutuhkan."
+  ];
+
+  const trustPoints = [
+    {
+      title: "Informasi enak dibaca",
+      body: "Halaman dibuat lebih ringan dilihat, sehingga detail penting mudah ditemukan tanpa perlu menebak langkah berikutnya."
+    },
+    {
+      title: "Checkout yang terasa rapi",
+      body: "Detail pembayaran disusun lebih bersih agar proses transaksi terasa aman, profesional, dan tidak membingungkan."
+    },
+    {
+      title: "Bantuan tetap dekat",
+      body: `Cek status atau order lewat Telegram juga tersedia melalui ${SITE.botUsername} dan ${SITE.autoOrderBotUsername}.`
+    }
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl space-y-14 px-4 py-10 sm:px-6 lg:px-8">
-      <section className="grid gap-8 rounded-[32px] border border-primary/10 bg-[#031227] p-6 shadow-[0_0_0_1px_rgba(250,204,21,0.04),0_30px_120px_rgba(2,6,23,0.55)] lg:grid-cols-[minmax(0,1.2fr)_420px] lg:p-10">
-        <div className="space-y-8">
-          <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-xs font-bold uppercase tracking-[0.35em] text-primary">
-            Layanan digital terpercaya
-          </span>
+    <div className="page-section">
+      <div className="site-container space-y-14">
+        <section className="brand-shell mesh-backdrop grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_430px]">
+          <div className="space-y-8">
+            <span className="brand-pill">Layanan digital terpercaya</span>
 
-          <div className="space-y-5">
-            <h1 className="max-w-4xl text-4xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Belanja layanan digital yang terasa lebih <span className="text-primary">tenang</span>, lebih <span className="text-primary">jelas</span>, dan lebih <span className="text-primary">nyaman</span> dari awal sampai selesai.
-            </h1>
-            <p className="max-w-3xl text-lg leading-9 text-slate-300 sm:text-[1.2rem]">
-              {SITE.name} hadir untuk memudahkan Anda memilih layanan digital, menyelesaikan pembayaran dengan nyaman, lalu memantau pesanan tanpa perlu repot mencari informasi penting di banyak tempat.
-            </p>
-          </div>
+            <div className="space-y-5">
+              <h1 className="brand-title text-balance">
+                Belanja layanan digital yang terasa lebih tenang, lebih jelas, dan lebih nyaman dari awal sampai selesai.
+              </h1>
+              <p className="brand-subtitle">
+                {SITE.name} hadir untuk membantu Anda memilih layanan digital dengan lebih yakin, menyelesaikan pembayaran
+                dengan alur yang rapi, lalu memantau pesanan tanpa perlu repot mencari informasi penting di banyak tempat.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap gap-4">
-            <Link href="/products" className="inline-flex h-14 items-center justify-center rounded-full bg-primary px-7 text-base font-bold text-slate-950 transition hover:opacity-90">
-              Lihat semua produk
-            </Link>
-            <Link href="/cek-pesanan" className="inline-flex h-14 items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 text-base font-semibold text-white transition hover:border-primary/40 hover:bg-primary/10">
-              Cek pesanan tanpa login
-            </Link>
-          </div>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/products"
+                className="inline-flex h-14 items-center justify-center rounded-full bg-[color:var(--accent)] px-7 text-base font-bold text-slate-950 transition hover:-translate-y-0.5"
+              >
+                Lihat semua produk
+              </Link>
+              <Link
+                href="/orders"
+                className="inline-flex h-14 items-center justify-center rounded-full border border-[color:var(--border)] bg-[color:var(--card)] px-7 text-base font-semibold text-[color:var(--foreground)] transition hover:-translate-y-0.5"
+              >
+                Cek pesanan tanpa login
+              </Link>
+            </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              {
-                title: "Pilihan yang tertata",
-                body: "Setiap produk disusun lebih ringkas agar Anda lebih mudah membandingkan pilihan dan menemukan yang paling cocok."
-              },
-              {
-                title: "Pembayaran lebih jelas",
-                body: "Nominal, QRIS, dan status pembayaran ditampilkan jelas agar proses transaksi terasa aman dan tidak membingungkan."
-              },
-              {
-                title: "Pesanan mudah dipantau",
-                body: "Resi, invoice, dan status transaksi dapat diakses kembali kapan saja saat Anda membutuhkannya."
-              }
-            ].map((item) => (
-              <div key={item.title} className="rounded-[28px] border border-white/10 bg-white/5 p-5 text-slate-300">
-                <h3 className="text-xl font-extrabold text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="rounded-[30px] bg-primary p-7 text-slate-950 shadow-[0_25px_80px_rgba(250,204,21,0.25)]">
-            <div className="text-xs font-bold uppercase tracking-[0.35em] text-slate-800">Cara belanja</div>
-            <ol className="mt-5 space-y-5 text-lg font-medium leading-8">
-              <li>1. Temukan produk atau paket yang paling sesuai dengan kebutuhan Anda.</li>
-              <li>2. Lanjutkan pembayaran melalui QRIS dinamis yang langsung tampil di halaman pembayaran.</li>
-              <li>3. Setelah pembayaran berhasil, status transaksi diperbarui otomatis oleh sistem.</li>
-              <li>4. Simpan resi pesanan untuk memantau progres layanan kapan saja Anda perlukan.</li>
-            </ol>
-          </div>
-
-          <div className="rounded-[30px] border border-white/10 bg-white/5 p-6">
-            <div className="text-xs font-bold uppercase tracking-[0.35em] text-slate-500">Kenapa pelanggan merasa lebih nyaman</div>
-            <div className="mt-5 space-y-4">
-              {[
-                {
-                  title: "Tampilan yang nyaman dibaca",
-                  body: "Setiap halaman dirancang agar informasi penting mudah ditemukan tanpa membuat Anda perlu menebak-nebak langkah berikutnya."
-                },
-                {
-                  title: "Checkout yang lebih meyakinkan",
-                  body: "Pembayaran dibuat lebih rapi dan transparan agar Anda bisa bertransaksi dengan rasa aman dan lebih yakin."
-                },
-                {
-                  title: "Bantuan tetap dekat",
-                  body: `Butuh cek pesanan atau order lewat Telegram? Kami juga menyiapkan akses cepat lewat ${SITE.botUsername} dan ${SITE.autoOrderBotUsername}.`
-                }
-              ].map((item) => (
-                <div key={item.title} className="rounded-[24px] border border-white/10 bg-white/5 p-5">
-                  <h3 className="text-xl font-extrabold text-white">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-300">{item.body}</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {highlights.map((item) => (
+                <div key={item.title} className="brand-card">
+                  <h3 className="text-xl font-black text-[color:var(--foreground)]">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">{item.body}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.35em] text-primary">Pilihan populer</div>
-            <h2 className="mt-2 text-3xl font-black text-white sm:text-5xl">Produk yang paling sering dicari</h2>
-            <p className="mt-3 max-w-3xl text-base leading-8 text-slate-300">
-              Temukan layanan digital yang tersusun lebih rapi, mudah dibandingkan, dan nyaman dibeli dari desktop maupun mobile.
+          <div className="space-y-5">
+            <div className="rounded-[30px] border border-[rgba(245,207,83,0.24)] bg-[color:var(--accent)] p-7 text-slate-950 shadow-[0_30px_80px_rgba(245,207,83,0.24)]">
+              <div className="text-xs font-black uppercase tracking-[0.34em] text-slate-800/80">Alur layanan</div>
+              <ol className="mt-5 space-y-5 text-lg font-semibold leading-8">
+                {serviceFlow.map((item, index) => (
+                  <li key={item}>{index + 1}. {item}</li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="brand-panel">
+              <div className="brand-kicker">Kenapa pelanggan merasa lebih nyaman</div>
+              <div className="mt-5 space-y-4">
+                {trustPoints.map((item) => (
+                  <div key={item.title} className="brand-card">
+                    <h3 className="text-xl font-black text-[color:var(--foreground)]">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-soft)]">{item.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="brand-kicker">Pilihan populer</div>
+              <h2 className="mt-2 text-3xl font-black text-[color:var(--foreground)] sm:text-5xl">Produk yang paling sering dicari</h2>
+              <p className="mt-3 max-w-3xl text-base leading-8 text-[color:var(--foreground-soft)]">
+                Temukan layanan digital yang ditampilkan lebih ringkas, mudah dibandingkan, dan tetap nyaman dibeli dari
+                desktop maupun mobile.
+              </p>
+            </div>
+            <Link href="/products" className="brand-link text-sm">
+              Lihat katalog lengkap
+            </Link>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {(featuredProducts || []).map((product: any) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-3">
+          <div className="brand-panel">
+            <div className="brand-kicker">Katalog aktif</div>
+            <div className="mt-4 text-4xl font-black text-[color:var(--foreground)]">{activeProductCount || 0}+</div>
+            <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">
+              Pilihan produk yang ditampilkan siap dipilih langsung.
             </p>
           </div>
-          <Link href="/products" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
-            Lihat katalog lengkap
-          </Link>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {(featuredProducts || []).map((product: any) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-6 rounded-[30px] border border-white/10 bg-white/5 p-6 md:grid-cols-3">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-[0.35em] text-slate-400">Katalog aktif</div>
-          <div className="mt-3 text-4xl font-black text-white">{activeProductCount || featuredProducts?.length || 0}+</div>
-          <p className="mt-3 text-sm leading-7 text-slate-300">Pilihan produk yang ditampilkan rapi dan siap dibeli langsung.</p>
-        </div>
-        <div>
-          <div className="text-xs font-bold uppercase tracking-[0.35em] text-slate-400">Kategori pilihan</div>
-          <div className="mt-3 text-4xl font-black text-white">{categoryCount || 1}</div>
-          <p className="mt-3 text-sm leading-7 text-slate-300">Beragam kebutuhan digital yang dikelompokkan agar lebih mudah ditelusuri.</p>
-        </div>
-        <div>
-          <div className="text-xs font-bold uppercase tracking-[0.35em] text-slate-400">Mulai belanja</div>
-          <div className="mt-3 text-2xl font-black text-white">Dari {formatRupiah(minPrice)}</div>
-          <p className="mt-3 text-sm leading-7 text-slate-300">Nominal tampil terbuka sejak awal supaya Anda bisa memilih layanan yang paling pas.</p>
-        </div>
-      </section>
+          <div className="brand-panel">
+            <div className="brand-kicker">Kategori pilihan</div>
+            <div className="mt-4 text-4xl font-black text-[color:var(--foreground)]">{categoryCount}</div>
+            <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">
+              Kategori disusun agar proses memilih tetap terasa cepat dan fokus.
+            </p>
+          </div>
+          <div className="brand-panel">
+            <div className="brand-kicker">Mulai belanja</div>
+            <div className="mt-4 text-4xl font-black text-[color:var(--foreground)]">
+              {minPrice > 0 ? `Dari ${formatRupiah(minPrice)}` : "Harga fleksibel"}
+            </div>
+            <p className="mt-3 text-sm leading-7 text-[color:var(--foreground-soft)]">
+              Mulai dari pilihan yang ringan, lalu lanjut ke paket terbaik sesuai kebutuhan Anda.
+            </p>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

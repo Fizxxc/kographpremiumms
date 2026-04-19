@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExternalLink, ImagePlus, Link2, Send, ShoppingCart, X } from "lucide-react";
+import { ArrowUpRight, ExternalLink, ImagePlus, Link2, MessageCircleMore, Send, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -107,86 +107,174 @@ export function ChatRoomClient({ roomId }: { roomId: string }) {
   );
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-          <div className="text-sm uppercase tracking-[0.2em] text-slate-400">Room aktif</div>
-          <h1 className="mt-2 text-2xl font-bold text-white">{data?.room?.title || roomTitle}</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            Semua admin bisa melihat room ini. Anda bisa briefing, kirim referensi, upload gambar, lalu lanjut order langsung dari chat saat sudah siap.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="brand-shell mesh-backdrop">
+          <div className="space-y-4">
+            <span className="brand-pill">
+              <MessageCircleMore className="h-3.5 w-3.5" />
+              Room aktif
+            </span>
+            <div>
+              <h1 className="text-3xl font-black tracking-[-0.04em] text-[color:var(--foreground)] sm:text-4xl">
+                {data?.room?.title || roomTitle}
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--foreground-soft)]">
+                Semua admin bisa melihat room ini. Anda dapat briefing, mengirim referensi, upload gambar, lalu lanjut
+                order langsung dari room yang sama agar percakapan tetap rapi.
+              </p>
+            </div>
+          </div>
+        </section>
 
-        <div className="rounded-[28px] border border-brand-500/20 bg-brand-500/10 p-5">
-          <div className="flex items-center gap-2 text-white"><ShoppingCart className="h-4 w-4 text-brand-200" />Order langsung dari live chat</div>
-          <p className="mt-2 text-sm leading-6 text-slate-300">Hanya produk yang ready stock yang ditampilkan di sini supaya checkout lebih cepat dan jelas.</p>
-          <div className="mt-4 max-h-[320px] space-y-3 overflow-y-auto pr-1">
-            {catalog.length ? catalog.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-medium text-white">🛒 {item.name}</div>
-                    <div className="mt-1 text-sm text-slate-300">{formatRupiah(item.price)} • stok {item.stock}</div>
+        <section className="brand-panel border-[rgba(245,207,83,0.22)] bg-[linear-gradient(135deg,rgba(245,207,83,0.14),transparent_60%),var(--card)]">
+          <div className="flex items-center gap-3 text-[color:var(--foreground)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--accent)] text-slate-950">
+              <ShoppingCart className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black">Order langsung dari live chat</h2>
+              <p className="text-sm text-[color:var(--foreground-soft)]">Hanya produk ready stock yang ditampilkan.</p>
+            </div>
+          </div>
+
+          <div className="mt-5 max-h-[380px] space-y-3 overflow-y-auto pr-1 scrollbar-thin">
+            {catalog.length ? (
+              catalog.map((item) => (
+                <div key={item.id} className="brand-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-base font-bold text-[color:var(--foreground)]">{item.name}</div>
+                      <div className="mt-1 text-sm text-[color:var(--foreground-soft)]">
+                        {formatRupiah(item.price)} • stok {item.stock}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card-strong)] p-2 text-[color:var(--foreground)]">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </div>
                   </div>
-                </div>
-                <div className="mt-3 grid gap-2">
-                  <Button disabled={ordering !== null} onClick={() => orderFromChat(item.id)}>
+                  <Button
+                    className="mt-4 h-11 w-full rounded-full bg-[color:var(--accent)] text-sm font-bold text-slate-950 hover:-translate-y-0.5"
+                    disabled={ordering !== null}
+                    onClick={() => orderFromChat(item.id)}
+                  >
                     {ordering === `${item.id}:qris` ? "Memproses..." : "Bayar via QRIS dinamis"}
                   </Button>
                 </div>
+              ))
+            ) : (
+              <div className="brand-card text-sm leading-7 text-[color:var(--foreground-soft)]">
+                Belum ada produk ready stock untuk order cepat dari chat.
               </div>
-            )) : <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300">Belum ada produk ready stock untuk order cepat dari chat.</div>}
+            )}
           </div>
-        </div>
+        </section>
       </div>
 
-      <div ref={listRef} className="max-h-[60vh] space-y-3 overflow-y-auto rounded-[28px] border border-white/10 bg-slate-950/60 p-4">
-        {data?.messages?.map((item: any) => {
-          const isAdmin = item.sender_role === "admin";
-          const isSystem = item.sender_role === "system";
-          return (
-            <div key={item.id} className={`max-w-[88%] rounded-[24px] border p-4 ${isAdmin ? "ml-auto border-brand-500/20 bg-brand-500/10" : isSystem ? "mx-auto border-emerald-500/20 bg-emerald-500/10" : "border-white/10 bg-white/5"}`}>
-              <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">{item.sender_role} • {new Date(item.created_at).toLocaleString("id-ID")}</div>
-              {item.message && <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-100">{item.message}</div>}
-              {item.image_url && <img src={item.image_url} alt="chat image" className="mt-3 max-h-72 rounded-2xl object-cover" />}
-              {item.link_url && (
-                <button className="mt-3 flex items-center gap-2 rounded-2xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-200" onClick={() => setPreviewUrl(item.link_url)}>
-                  <ExternalLink className="h-4 w-4" />Buka link / pembayaran
-                </button>
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <section ref={listRef} className="brand-shell max-h-[68vh] space-y-4 overflow-y-auto scrollbar-thin">
+          {data?.messages?.length ? (
+            data.messages.map((item: any) => {
+              const isAdmin = item.sender_role === "admin";
+              const isSystem = item.sender_role === "system";
+              return (
+                <div
+                  key={item.id}
+                  className={`max-w-[90%] rounded-[26px] border p-4 sm:p-5 ${
+                    isAdmin
+                      ? "ml-auto border-[rgba(245,207,83,0.25)] bg-[rgba(245,207,83,0.12)]"
+                      : isSystem
+                        ? "mx-auto border-emerald-500/20 bg-emerald-500/10"
+                        : "border-[color:var(--border)] bg-[color:var(--card)]"
+                  }`}
+                >
+                  <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[color:var(--foreground-soft)]">
+                    {item.sender_role} • {new Date(item.created_at).toLocaleString("id-ID")}
+                  </div>
+                  {item.message ? <div className="whitespace-pre-wrap break-words text-sm leading-7 text-[color:var(--foreground)]">{item.message}</div> : null}
+                  {item.image_url ? <img src={item.image_url} alt="chat image" className="mt-3 max-h-80 rounded-[22px] object-cover" /> : null}
+                  {item.link_url ? (
+                    <button
+                      className="mt-3 inline-flex items-center gap-2 rounded-full border border-sky-500/25 bg-sky-500/10 px-4 py-2 text-sm font-semibold text-sky-600 dark:text-sky-300"
+                      onClick={() => setPreviewUrl(item.link_url)}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Buka link / pembayaran
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })
+          ) : (
+            <div className="brand-card text-sm leading-7 text-[color:var(--foreground-soft)]">Belum ada pesan. Silakan mulai percakapan.</div>
+          )}
+        </section>
+
+        <aside className="brand-panel space-y-4">
+          <div>
+            <div className="brand-kicker">Kirim pesan</div>
+            <h2 className="mt-2 text-2xl font-black text-[color:var(--foreground)]">Jelaskan kebutuhan Anda dengan lebih rapi</h2>
+            <p className="mt-2 text-sm leading-7 text-[color:var(--foreground-soft)]">
+              Tambahkan pesan, link referensi, atau gambar agar admin lebih mudah memahami kebutuhan Anda.
+            </p>
+          </div>
+
+          <Textarea
+            rows={7}
+            placeholder="Tulis pesan ke admin..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="rounded-[24px] border-[color:var(--border)] bg-[color:var(--card-strong)] text-[color:var(--foreground)]"
+          />
+
+          <div className="relative">
+            <Link2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--foreground-soft)]" />
+            <Input
+              className="h-12 rounded-full border-[color:var(--border)] bg-[color:var(--card-strong)] pl-11 text-[color:var(--foreground)]"
+              placeholder="Tempel link referensi jika ada"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
+            <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--card)] px-5 text-sm font-semibold text-[color:var(--foreground)] transition hover:-translate-y-0.5">
+              <ImagePlus className="h-4 w-4" />
+              Upload gambar
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0] || null)} />
+            </label>
+            <Button
+              onClick={() => send()}
+              disabled={sending || uploading}
+              className="h-12 rounded-full bg-[color:var(--accent)] text-sm font-bold text-slate-950 transition hover:-translate-y-0.5"
+            >
+              {sending || uploading ? "Mengirim..." : (
+                <>
+                  Kirim pesan
+                  <Send className="ml-2 h-4 w-4" />
+                </>
               )}
-            </div>
-          );
-        })}
+            </Button>
+          </div>
+        </aside>
       </div>
 
-      <div className="space-y-3 rounded-[28px] border border-white/10 bg-white/5 p-4">
-        <Textarea rows={4} placeholder="Tulis pesan ke admin..." value={message} onChange={(e) => setMessage(e.target.value)} />
-        <div className="flex flex-wrap gap-2">
-          <div className="min-w-[240px] flex-1">
-            <div className="relative">
-              <Link2 className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-              <Input className="pl-9" placeholder="Tempel link jika ada referensi" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+      {previewUrl ? (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 p-4 backdrop-blur-sm">
+          <div className="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[color:var(--background-soft)] shadow-[var(--shadow)]">
+            <div className="flex items-center justify-between gap-4 border-b border-[color:var(--border)] px-4 py-3">
+              <div className="truncate text-sm font-medium text-[color:var(--foreground)]">{previewUrl}</div>
+              <button
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--foreground)]"
+                onClick={() => setPreviewUrl(null)}
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          </div>
-          <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-white/15 px-4 text-white">
-            <ImagePlus className="h-4 w-4" />
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0] || null)} />
-          </label>
-          <Button onClick={() => send()} disabled={sending || uploading}>{sending || uploading ? "Mengirim..." : <Send className="h-4 w-4" />}</Button>
-        </div>
-      </div>
-
-      {previewUrl && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 p-4">
-          <div className="mx-auto flex h-full max-w-5xl flex-col rounded-[28px] border border-white/10 bg-slate-950">
-            <div className="flex items-center justify-between border-b border-white/10 p-3">
-              <div className="break-all text-sm text-slate-300">{previewUrl}</div>
-              <button className="rounded-2xl border border-white/10 p-2 text-white" onClick={() => setPreviewUrl(null)}><X className="h-4 w-4" /></button>
-            </div>
-            <iframe src={previewUrl} className="h-full w-full rounded-b-[28px]" />
+            <iframe src={previewUrl} className="h-full w-full" />
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
