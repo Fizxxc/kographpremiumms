@@ -7,5 +7,11 @@ export default function WaitingPaymentPage({
   params: { orderId: string };
   searchParams: { resi?: string; type?: string };
 }) {
-  return <PaymentStatusClient orderId={params.orderId} resi={searchParams.resi} type={searchParams.type} />;
+  return (
+    <PaymentStatusClient
+      orderId={params.orderId}
+      publicOrderCode={searchParams.resi}
+      type={searchParams.type}
+    />
+  );
 }

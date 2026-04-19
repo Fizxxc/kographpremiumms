@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/format";
 import { SITE } from "@/lib/constants";
-import { ProductCard } from "@/components/product-card";
+import ProductCard from "@/components/product-card";
 
 export default async function HomePage() {
   const supabase = createServerSupabaseClient();
