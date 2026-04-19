@@ -40,10 +40,10 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
           code,
           type,
           value: Number(value),
-          minOrder: minOrder ? Number(minOrder) : 0,
-          maxDiscount: maxDiscount ? Number(maxDiscount) : 0,
+          min_purchase: minOrder ? Number(minOrder) : 0,
+          max_discount: maxDiscount ? Number(maxDiscount) : null,
           quota: quota ? Number(quota) : null,
-          active
+          is_active: active
         })
       });
       const json = await response.json();
@@ -156,12 +156,12 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
                       {coupon.type === "percentage" ? `${coupon.value}%` : `Rp ${Number(coupon.value || 0).toLocaleString("id-ID")}`}
                     </div>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${coupon.active ? "bg-emerald-300/15 text-emerald-300" : "bg-slate-300/10 text-slate-400"}`}>
-                    {coupon.active ? "Aktif" : "Nonaktif"}
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${(coupon.is_active ?? coupon.active) ? "bg-emerald-300/15 text-emerald-300" : "bg-slate-300/10 text-slate-400"}`}>
+                    {(coupon.is_active ?? coupon.active) ? "Aktif" : "Nonaktif"}
                   </span>
                 </div>
                 <div className="mt-3 text-xs leading-6 text-slate-400">
-                  Minimal belanja: Rp {Number(coupon.min_order || 0).toLocaleString("id-ID")} • Dipakai {Number(coupon.used_count || 0)} kali
+                  Minimal belanja: Rp {Number(coupon.min_purchase || coupon.min_order || 0).toLocaleString("id-ID")} • Dipakai {Number(coupon.used_count || 0)} kali
                 </div>
               </div>
             ))
