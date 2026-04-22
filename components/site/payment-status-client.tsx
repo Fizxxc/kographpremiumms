@@ -74,10 +74,15 @@ const statusMeta = {
   }
 } as const;
 
-function safeCopy(value: string, onSuccess: () => void) {
+function safeCopy(value: string, onSuccess?: () => void) {
   if (!value) return;
+
+  const runSuccess = () => {
+    if (onSuccess) onSuccess();
+  };
+
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(value).then(onSuccess).catch(() => undefined);
+    navigator.clipboard.writeText(value).then(runSuccess).catch(() => undefined);
     return;
   }
 
@@ -91,7 +96,7 @@ function safeCopy(value: string, onSuccess: () => void) {
     textarea.select();
     try {
       document.execCommand("copy");
-      onSuccess();
+      runSuccess();
     } finally {
       document.body.removeChild(textarea);
     }
@@ -273,13 +278,12 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
             <div className="relative overflow-hidden p-6 sm:p-8 lg:p-10">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(250,204,21,0.14),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_26%)]" />
               <div className="relative space-y-7">
-                <span className={`inline-flex rounded-full border px-5 py-2 text-xs font-black uppercase tracking-[0.35em] ${
-                  status === "success"
+                <span className={`inline-flex rounded-full border px-5 py-2 text-xs font-black uppercase tracking-[0.35em] ${status === "success"
                     ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
                     : status === "failed"
                       ? "border-rose-400/20 bg-rose-400/10 text-rose-300"
                       : "border-primary/30 bg-primary/10 text-primary"
-                }`}>
+                  }`}>
                   {meta.badge}
                 </span>
 
@@ -349,7 +353,12 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                       {statusData?.credentialReady && statusData.deliveryFields?.length ? (
                         <button
                           type="button"
-                          onClick={() => safeCopy(statusData.deliveryFields?.map((field) => `${field.label}: ${field.value}`).join("\n") || "")}
+                          onClick={() =>
+                            safeCopy(
+                              statusData.deliveryFields?.map((field) => `${field.label}: ${field.value}`).join("\n") || "",
+                              () => setCopiedKey("credential")
+                            )
+                          }
                           className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white transition hover:border-primary/40 hover:bg-primary/10"
                         >
                           <Copy className="h-4 w-4" />
@@ -376,13 +385,13 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                 ) : null}
 
                 <div className="flex flex-wrap gap-3">                  {statusData?.publicOrderCode ? (
-                    <Link
-                      href={`/cek-pesanan?resi=${encodeURIComponent(statusData.publicOrderCode)}`}
-                      className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-bold text-slate-950 transition hover:opacity-90"
-                    >
-                      Cek pesanan dengan resi
-                    </Link>
-                  ) : null}
+                  <Link
+                    href={`/cek-pesanan?resi=${encodeURIComponent(statusData.publicOrderCode)}`}
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-bold text-slate-950 transition hover:opacity-90"
+                  >
+                    Cek pesanan dengan resi
+                  </Link>
+                ) : null}
 
                   {invoiceHref && status === "success" ? (
                     <a
@@ -510,11 +519,10 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                 </div>
               ) : (
                 <div className="space-y-5">
-                  <div className={`rounded-[30px] border p-5 ${
-                    status === "success"
+                  <div className={`rounded-[30px] border p-5 ${status === "success"
                       ? "border-emerald-400/20 bg-emerald-400/10"
                       : "border-rose-400/20 bg-rose-400/10"
-                  }`}>
+                    }`}>
                     <div className="grid h-44 place-items-center rounded-[24px] border border-white/10 bg-[#06172e]/65 text-center">
                       <div className="px-5">
                         {status === "success" ? (

@@ -10,10 +10,16 @@ type LookupResult =
   | { kind: "topup"; row: any }
   | null;
 
-async function findTransaction(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string, publicOrderCode?: string) {
+async function findTransaction(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  orderId: string,
+  publicOrderCode?: string
+) {
   const base = admin
     .from("transactions")
-    .select("id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, gateway_payload, updated_at")
+    .select(
+      "id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, gateway_payload, updated_at"
+    )
     .eq("order_id", orderId)
     .limit(1);
 
@@ -24,14 +30,20 @@ async function findTransaction(admin: ReturnType<typeof createAdminSupabaseClien
 
   const fallback = await admin
     .from("transactions")
-    .select("id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, gateway_payload, updated_at")
+    .select(
+      "id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, gateway_payload, updated_at"
+    )
     .eq("order_id", orderId)
     .maybeSingle();
 
   return fallback.data || null;
 }
 
-async function findTopup(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string, publicOrderCode?: string) {
+async function findTopup(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  orderId: string,
+  publicOrderCode?: string
+) {
   const base = admin
     .from("wallet_topups")
     .select("id, order_id, public_order_code, status, amount, fulfillment_data, updated_at")
@@ -60,7 +72,9 @@ async function findStatusRow(input: {
   const admin = createAdminSupabaseClient();
   const orderId = String(input.orderId || "").trim();
   const publicOrderCode = String(input.publicOrderCode || "").trim() || undefined;
-  const explicitType = String(input.explicitType || "").trim().toLowerCase();
+  const explicitType = String(input.explicitType || "")
+    .trim()
+    .toLowerCase();
 
   if (explicitType === "topup") {
     const topup = await findTopup(admin, orderId, publicOrderCode);
@@ -81,17 +95,27 @@ async function findStatusRow(input: {
   return null;
 }
 
-export async function GET(request: NextRequest, { params }: { params: { orderId: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+) {
   try {
     const orderId = String(params.orderId || "").trim();
     const publicOrderCode = String(request.nextUrl.searchParams.get("resi") || "").trim();
-    const explicitType = String(request.nextUrl.searchParams.get("type") || "").trim().toLowerCase();
+    const explicitType = String(request.nextUrl.searchParams.get("type") || "")
+      .trim()
+      .toLowerCase();
 
     if (!orderId) {
       return NextResponse.json({ error: "Order ID wajib diisi." }, { status: 400 });
     }
 
-    const found = await findStatusRow({ orderId, publicOrderCode, explicitType: explicitType || null });
+    const found = await findStatusRow({
+      orderId,
+      publicOrderCode,
+      explicitType: explicitType || null
+    });
+
     if (!found) {
       return NextResponse.json(
         {
@@ -105,17 +129,32 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
     }
 
     await syncPakasirOrderState(orderId).catch(() => null);
+
     if (found.kind === "transaction") {
       await fulfillProductOrder(orderId).catch(() => null);
     }
 
-    const refreshed = await findStatusRow({ orderId, publicOrderCode, explicitType: found.kind });
+    const refreshed = await findStatusRow({
+      orderId,
+      publicOrderCode,
+      explicitType: found.kind
+    });
+
     const kind = refreshed?.kind || found.kind;
     const row = refreshed?.row || found.row;
     const fulfillment = (row as any).fulfillment_data || {};
-    const amount = Number((row as any).final_amount || (row as any).amount || fulfillment.payment_total_amount || 0);
+    const amount = Number(
+      (row as any).final_amount ||
+      (row as any).amount ||
+      fulfillment.payment_total_amount ||
+      0
+    );
 
-    let gatewayPayload = fulfillment.provider_response || fulfillment.gateway_payload || (row as any).gateway_payload || null;
+    let gatewayPayload =
+      fulfillment.provider_response ||
+      fulfillment.gateway_payload ||
+      (row as any).gateway_payload ||
+      null;
 
     try {
       if (amount > 0) {
@@ -136,11 +175,35 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
     ).toLowerCase();
 
     const normalizedGatewayStatus = normalizePakasirStatus(rawStatus);
-    const normalizedStatus = normalizedGatewayStatus === "settlement"
-      ? "success"
-      : normalizedGatewayStatus === "expire"
-      ? "failed"
-      : "pending";
+
+    const normalizedStatus =
+      normalizedGatewayStatus === "settlement"
+        ? "success"
+        : normalizedGatewayStatus === "expire"
+          ? "failed"
+          : "pending";
+
+    let deliveryFields: Array<{ label: string; value: string }> = [];
+
+    if (kind === "transaction") {
+      const admin = createAdminSupabaseClient();
+
+      const { data: assignedCredential } = await admin
+        .from("app_credentials")
+        .select("id, account_data")
+        .eq("transaction_id", (row as any).id)
+        .maybeSingle();
+
+      deliveryFields = buildDeliveryFields({
+        fulfillmentData: fulfillment,
+        credential: assignedCredential
+          ? {
+            id: String(assignedCredential.id),
+            account_data: assignedCredential.account_data
+          }
+          : null
+      });
+    }
 
     return NextResponse.json({
       ok: true,
@@ -182,7 +245,9 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
       credentialStatus: fulfillment.delivery_status || null,
       updatedAt: (row as any).updated_at || null,
       invoiceUrl: (row as any).public_order_code
-        ? `/api/invoice/${encodeURIComponent(orderId)}?resi=${encodeURIComponent(String((row as any).public_order_code))}&download=1`
+        ? `/api/invoice/${encodeURIComponent(orderId)}?resi=${encodeURIComponent(
+          String((row as any).public_order_code)
+        )}&download=1`
         : null,
       credentialReady: deliveryFields.length > 0,
       deliveryFields,
@@ -192,11 +257,12 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
             ? "Pembayaran berhasil dan saldo sedang diproses ke akun Anda."
             : "Pembayaran berhasil. Pesanan Anda sedang diproses dan detailnya bisa dicek kembali dari halaman ini."
           : normalizedStatus === "failed"
-          ? "Transaksi sudah tidak aktif. Silakan buat pesanan baru bila Anda masih ingin melanjutkan pembelian."
-          : "QRIS sudah tersedia. Silakan selesaikan pembayaran agar pesanan dapat segera diproses."
+            ? "Transaksi sudah tidak aktif. Silakan buat pesanan baru bila Anda masih ingin melanjutkan pembelian."
+            : "QRIS sudah tersedia. Silakan selesaikan pembayaran agar pesanan dapat segera diproses."
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal mengambil status pesanan.";
+    const message =
+      error instanceof Error ? error.message : "Gagal mengambil status pesanan.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
