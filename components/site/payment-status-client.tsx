@@ -37,6 +37,7 @@ type StatusData = {
   expiresAt?: string | null;
   paymentUrl?: string | null;
   updatedAt?: string | null;
+  credentialFields?: Array<{ label: string; value: string }>;
 };
 
 type PaymentStatusClientProps = {
@@ -249,6 +250,7 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
   const invoiceHref = statusData?.publicOrderCode
     ? `/api/invoice/${encodeURIComponent(orderId)}?resi=${encodeURIComponent(statusData.publicOrderCode)}&download=1`
     : null;
+  const credentialFields = Array.isArray(statusData?.credentialFields) ? statusData.credentialFields : [];
 
   const handleCopy = (key: string, value?: string | null) => {
     if (!value) return;
@@ -324,6 +326,30 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                     ) : null}
                   </div>
                 </div>
+
+                {credentialFields.length && status === "success" ? (
+                  <section className="rounded-[30px] border border-emerald-400/25 bg-emerald-400/10 p-5 sm:p-6">
+                    <div className="max-w-3xl">
+                      <p className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/80">
+                        Credential pembelian
+                      </p>
+                      <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
+                        Data akun sudah tersedia
+                      </h2>
+                      <p className="mt-3 text-sm leading-7 text-slate-200/85">
+                        Simpan data ini baik-baik dan jangan dibagikan ke orang lain. Semua detail yang sama juga ikut masuk ke invoice PDF saat sudah tersedia.
+                      </p>
+                    </div>
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                      {credentialFields.map((field) => (
+                        <div key={`${field.label}-${field.value}`} className="rounded-[24px] border border-white/10 bg-[#071b35]/85 p-4">
+                          <div className="text-[11px] font-black uppercase tracking-[0.32em] text-slate-400">{field.label}</div>
+                          <div className="mt-3 break-words text-base font-semibold text-white sm:text-lg">{field.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
 
                 <div className="flex flex-wrap gap-3">
                   {statusData?.publicOrderCode ? (
