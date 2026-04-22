@@ -44,23 +44,6 @@ export function parseCredentialMap(input: any): Record<string, string> {
     // ignore invalid JSON and fallback to text parsing below
   }
 
-  const knownKeys = new Set(["email", "username", "user", "password", "pass", "panel url", "url", "server uuid", "license", "token"]);
-  const singleLinePair = source.match(/^([^\n\r:]+):(.+)$/);
-
-  if (singleLinePair) {
-    const left = String(singleLinePair[1] || "").trim();
-    const right = String(singleLinePair[2] || "").trim();
-    const normalizedLeft = left.toLowerCase();
-
-    if (left && right && !knownKeys.has(normalizedLeft)) {
-      if (left.includes("@")) {
-        return { email: left, password: right };
-      }
-
-      return { username: left, password: right };
-    }
-  }
-
   return source
     .split(/\r?\n/)
     .map((line) => line.trim())

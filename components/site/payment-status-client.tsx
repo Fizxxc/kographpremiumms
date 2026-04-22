@@ -38,10 +38,7 @@ type StatusData = {
   paymentUrl?: string | null;
   updatedAt?: string | null;
   credentialReady?: boolean;
-  deliveryFields?: {
-    label: string;
-    value: string;
-  }[];
+  deliveryFields?: Array<{ label: string; value: string; multiline?: boolean }>;
 };
 
 type PaymentStatusClientProps = {
@@ -74,15 +71,10 @@ const statusMeta = {
   }
 } as const;
 
-function safeCopy(value: string, onSuccess?: () => void) {
+function safeCopy(value: string, onSuccess: () => void) {
   if (!value) return;
-
-  const runSuccess = () => {
-    if (onSuccess) onSuccess();
-  };
-
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(value).then(runSuccess).catch(() => undefined);
+    navigator.clipboard.writeText(value).then(onSuccess).catch(() => undefined);
     return;
   }
 
@@ -96,7 +88,7 @@ function safeCopy(value: string, onSuccess?: () => void) {
     textarea.select();
     try {
       document.execCommand("copy");
-      runSuccess();
+      onSuccess();
     } finally {
       document.body.removeChild(textarea);
     }
@@ -278,12 +270,13 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
             <div className="relative overflow-hidden p-6 sm:p-8 lg:p-10">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(250,204,21,0.14),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.12),transparent_26%)]" />
               <div className="relative space-y-7">
-                <span className={`inline-flex rounded-full border px-5 py-2 text-xs font-black uppercase tracking-[0.35em] ${status === "success"
+                <span className={`inline-flex rounded-full border px-5 py-2 text-xs font-black uppercase tracking-[0.35em] ${
+                  status === "success"
                     ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
                     : status === "failed"
                       ? "border-rose-400/20 bg-rose-400/10 text-rose-300"
                       : "border-primary/30 bg-primary/10 text-primary"
-                  }`}>
+                }`}>
                   {meta.badge}
                 </span>
 
@@ -334,64 +327,70 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                   </div>
                 </div>
 
-
-                {status === "success" ? (
-                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_20px_80px_rgba(2,6,23,0.22)]">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {status === "success" && statusData?.deliveryFields?.length ? (
+                  <div className="rounded-[30px] border border-primary/20 bg-white/5 p-5 shadow-[0_22px_80px_rgba(8,15,36,0.24)]">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.4em] text-yellow-300">Credential / Delivery</p>
-                        <h3 className="mt-2 text-xl font-black text-white">
-                          {statusData?.credentialReady ? "Credential sudah siap" : "Credential sedang disiapkan"}
-                        </h3>
-                        <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
-                          {statusData?.credentialReady
-                            ? "Gunakan data berikut untuk login atau mengakses layanan yang sudah Anda beli."
-                            : "Pembayaran sudah diterima. Sistem sedang menyelaraskan credential. Refresh halaman ini beberapa saat lagi bila data belum muncul."}
+                        <div className="text-xs font-black uppercase tracking-[0.35em] text-primary">Credential / delivery</div>
+                        <h3 className="mt-3 text-2xl font-black text-white">Credential sudah siap</h3>
+                        <p className="mt-3 text-sm leading-7 text-slate-300">
+                          Data login di bawah sudah otomatis diambil dari stok credential yang terhubung ke transaksi ini.
                         </p>
                       </div>
-
-                      {statusData?.credentialReady && statusData.deliveryFields?.length ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            safeCopy(
-                              statusData.deliveryFields?.map((field) => `${field.label}: ${field.value}`).join("\n") || "",
-                              () => setCopiedKey("credential")
-                            )
-                          }
-                          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white transition hover:border-primary/40 hover:bg-primary/10"
-                        >
-                          <Copy className="h-4 w-4" />
-                          Salin credential
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => handleCopy("delivery-all", statusData.deliveryFields?.map((field) => `${field.label}: ${field.value}`).join("\n") || "")}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white transition hover:border-primary/40 hover:bg-primary/10"
+                      >
+                        <Copy className="h-4 w-4" />
+                        {copiedKey === "delivery-all" ? "Tersalin" : "Salin semua"}
+                      </button>
                     </div>
 
-                    {statusData?.credentialReady && statusData.deliveryFields?.length ? (
-                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                        {statusData.deliveryFields.map((field) => (
-                          <div key={`${field.label}-${field.value}`} className="rounded-[24px] border border-white/10 bg-[#071b35]/85 p-4">
-                            <div className="text-[11px] font-black uppercase tracking-[0.35em] text-slate-500">{field.label}</div>
-                            <div className="mt-2 whitespace-pre-wrap break-words text-base font-bold text-white">{field.value}</div>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      {statusData.deliveryFields.map((field, index) => {
+                        const key = `delivery-${index}`;
+                        return (
+                          <div key={key} className="rounded-[22px] border border-white/10 bg-[#071b35]/85 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[11px] font-black uppercase tracking-[0.35em] text-slate-500">{field.label}</div>
+                                <div className={`mt-3 text-base font-bold text-white ${field.multiline ? "whitespace-pre-wrap break-words" : "break-all"}`}>{field.value}</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(key, field.value)}
+                                className="inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold text-white transition hover:border-primary/40 hover:bg-primary/10"
+                              >
+                                {copiedKey === key ? "Tersalin" : "Salin"}
+                              </button>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="mt-5 rounded-[24px] border border-dashed border-white/12 bg-[#071b35]/70 p-4 text-sm leading-7 text-slate-300">
-                        Credential belum muncul di transaksi ini. Pastikan stok credential tersedia di admin panel, lalu tekan refresh status.
-                      </div>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : null}
 
-                <div className="flex flex-wrap gap-3">                  {statusData?.publicOrderCode ? (
-                  <Link
-                    href={`/cek-pesanan?resi=${encodeURIComponent(statusData.publicOrderCode)}`}
-                    className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-bold text-slate-950 transition hover:opacity-90"
-                  >
-                    Cek pesanan dengan resi
-                  </Link>
+                {status === "success" && !statusData?.deliveryFields?.length ? (
+                  <div className="rounded-[30px] border border-white/10 bg-white/5 p-5 shadow-[0_22px_80px_rgba(8,15,36,0.24)]">
+                    <div className="text-xs font-black uppercase tracking-[0.35em] text-primary">Credential / delivery</div>
+                    <h3 className="mt-3 text-2xl font-black text-white">Credential sedang disiapkan</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">
+                      Pembayaran sudah diterima. Sistem sedang sinkron otomatis ke stok credential. Tekan refresh status beberapa detik lagi bila data belum muncul.
+                    </p>
+                  </div>
                 ) : null}
+
+                <div className="flex flex-wrap gap-3">
+                  {statusData?.publicOrderCode ? (
+                    <Link
+                      href={`/cek-pesanan?resi=${encodeURIComponent(statusData.publicOrderCode)}`}
+                      className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-bold text-slate-950 transition hover:opacity-90"
+                    >
+                      Cek pesanan dengan resi
+                    </Link>
+                  ) : null}
 
                   {invoiceHref && status === "success" ? (
                     <a
@@ -519,10 +518,11 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                 </div>
               ) : (
                 <div className="space-y-5">
-                  <div className={`rounded-[30px] border p-5 ${status === "success"
+                  <div className={`rounded-[30px] border p-5 ${
+                    status === "success"
                       ? "border-emerald-400/20 bg-emerald-400/10"
                       : "border-rose-400/20 bg-rose-400/10"
-                    }`}>
+                  }`}>
                     <div className="grid h-44 place-items-center rounded-[24px] border border-white/10 bg-[#06172e]/65 text-center">
                       <div className="px-5">
                         {status === "success" ? (

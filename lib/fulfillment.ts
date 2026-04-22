@@ -286,7 +286,7 @@ export async function fulfillProductOrder(orderId: string) {
     isChatBasedService(product.service_type) || Boolean(product.live_chat_enabled);
   const isStockManaged = isStockManagedService(product.service_type);
   const currentStatus = String((tx as any).status || "pending").toLowerCase();
-  const isPaid = ["settlement", "capture", "success", "paid", "completed"].includes(currentStatus);
+  const isPaid = ["settlement", "capture"].includes(currentStatus);
 
   if (!isPaid) {
     return { pending: true, status: currentStatus };
@@ -297,6 +297,15 @@ export async function fulfillProductOrder(orderId: string) {
       p_order_id: orderId,
     });
     if (rpcError) throw new Error(rpcError.message);
+
+    if (data?.fulfilled && !data?.already_settled) {
+      const { error: soldCountError } = await admin
+        .from("products")
+        .update({ sold_count: Number(product.sold_count || 0) + 1 })
+        .eq("id", product.id);
+
+      if (soldCountError) throw new Error(soldCountError.message);
+    }
 
     await notifyTelegramProduct(tx, product.name, null);
     await sendTransactionPaidEmail(orderId).catch((mailError) => {
