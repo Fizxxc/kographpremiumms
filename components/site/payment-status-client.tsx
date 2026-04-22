@@ -33,6 +33,7 @@ type StatusData = {
   } | null;
   qrString?: string | null;
   qrUrl?: string | null;
+  qrImage?: string | null;
   paymentNumber?: string | null;
   expiresAt?: string | null;
   paymentUrl?: string | null;
@@ -233,11 +234,12 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
 
   const qrImageSrc = useMemo(() => {
     if (statusData?.qrUrl) return statusData.qrUrl;
+    if (statusData?.qrImage) return statusData.qrImage;
     if (statusData?.qrString) {
       return `https://api.qrserver.com/v1/create-qr-code/?size=520x520&data=${encodeURIComponent(statusData.qrString)}`;
     }
     return null;
-  }, [statusData?.qrString, statusData?.qrUrl]);
+  }, [statusData?.qrString, statusData?.qrUrl, statusData?.qrImage]);
 
   const paymentReference = useMemo(() => {
     const raw = String(statusData?.paymentNumber || "").trim();

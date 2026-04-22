@@ -128,7 +128,7 @@ export async function POST(request: Request) {
       notes: notes || null,
       payment_provider: "pakasir",
       payment_qr_string: qris.qrString || null,
-      payment_qr_url: null,
+      payment_qr_url: qris.qrUrl || null,
       payment_number: qris.paymentNumber || null,
       payment_total_amount: qris.totalPayment || finalAmount,
       payment_fee: qris.fee || 0,

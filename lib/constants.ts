@@ -3,7 +3,7 @@ export const SITE = {
   url: process.env.NEXT_PUBLIC_APP_URL || "https://kographpremiapp.vercel.app",
   description:
     "Marketplace layanan digital dengan pengalaman belanja yang rapi, nyaman, dan mudah dipantau dari awal sampai pesanan selesai.",
-  botUsername: "@KographcekBot",
+  botUsername: "@cs_KographBot",
   autoOrderBotUsername: "@KographmarketsBot",
   support: {
     whatsapp: process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "",

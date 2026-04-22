@@ -168,7 +168,17 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
         gatewayPayload?.qr_content ||
         gatewayPayload?.qr_string ||
         gatewayPayload?.qris_content ||
+        fulfillment.payment_qr_string ||
         fulfillment.qr_string ||
+        null,
+      qrUrl:
+        gatewayPayload?.payment?.qr_url ||
+        gatewayPayload?.payment?.qr_image ||
+        gatewayPayload?.qr_url ||
+        gatewayPayload?.qr_image ||
+        gatewayPayload?.actions?.find?.((item: any) => typeof item?.url === "string" && String(item.url).includes("qr"))?.url ||
+        fulfillment.payment_qr_url ||
+        fulfillment.qr_image ||
         null,
       qrImage:
         gatewayPayload?.payment?.qr_url ||
@@ -176,7 +186,18 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
         gatewayPayload?.qr_url ||
         gatewayPayload?.qr_image ||
         gatewayPayload?.actions?.find?.((item: any) => typeof item?.url === "string" && String(item.url).includes("qr"))?.url ||
+        fulfillment.payment_qr_url ||
         fulfillment.qr_image ||
+        null,
+      paymentNumber:
+        gatewayPayload?.payment?.payment_number ||
+        fulfillment.payment_number ||
+        fulfillment.payment_qr_string ||
+        null,
+      expiresAt:
+        gatewayPayload?.payment?.expired_at ||
+        gatewayPayload?.expired_at ||
+        fulfillment.payment_expires_at ||
         null,
       statusLabel:
         normalizedStatus === "success"

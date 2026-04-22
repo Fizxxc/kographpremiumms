@@ -224,7 +224,7 @@ export async function createTelegramProductOrder(input: {
       payment_type: "qris",
       payment_provider: "pakasir",
       payment_qr_string: qris.qrString || null,
-      payment_qr_url: null,
+      payment_qr_url: qris.qrUrl || null,
       payment_actions: [],
       payment_fee: qris.fee || 0,
       payment_total_amount: qris.totalPayment || finalAmount,
