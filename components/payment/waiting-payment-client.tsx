@@ -18,8 +18,8 @@ function formatRupiah(value: number) {
 
 function normalizeStatus(status?: string | null) {
   const value = String(status || "pending").toLowerCase();
-  if (["settlement", "success", "paid", "completed"].includes(value)) return "Sudah dibayar";
-  if (["expire", "failed", "cancelled", "canceled"].includes(value)) return "Kedaluwarsa / batal";
+  if (value === "settlement") return "Sudah dibayar";
+  if (value === "expire") return "Kedaluwarsa / batal";
   return "Menunggu pembayaran";
 }
 
@@ -37,36 +37,10 @@ export function WaitingPaymentClient({ transaction, product, credential }: Waiti
   const [loading, setLoading] = useState(false);
 
   const fulfillmentData = (transaction.fulfillment_data || {}) as Record<string, any>;
-  const gatewayPayload = ((transaction as any).gateway_payload || fulfillmentData.gateway_payload || {}) as Record<string, any>;
-  const providerResponse = (fulfillmentData.provider_response || {}) as Record<string, any>;
-  const qrString = useMemo(() => {
-    return String(
-      fulfillmentData.payment_qr_string ||
-      fulfillmentData.payment_number ||
-      providerResponse.payment?.payment_number ||
-      gatewayPayload.payment?.payment_number ||
-      ""
-    ).trim();
-  }, [fulfillmentData, gatewayPayload, providerResponse]);
-  const qrUrl = useMemo(() => {
-    return String(
-      fulfillmentData.payment_qr_url ||
-      providerResponse.payment?.qr_url ||
-      providerResponse.payment?.qr_image ||
-      gatewayPayload.payment?.qr_url ||
-      gatewayPayload.payment?.qr_image ||
-      ""
-    ).trim();
-  }, [fulfillmentData, gatewayPayload, providerResponse]);
-  const expiresAt =
-    fulfillmentData.payment_expires_at ||
-    providerResponse.payment?.expired_at ||
-    gatewayPayload.payment?.expired_at ||
-    transaction.expires_at ||
-    null;
+  const qrString = String(fulfillmentData.payment_qr_string || "");
   const backupPayUrl = String(fulfillmentData.payment_fallback_url || transaction.snap_token || "");
   const waitingUrl = `/api/public-order-status/${transaction.order_id}?resi=${transaction.public_order_code}`;
-  const qrImageSrc = qrUrl || (qrString ? `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(qrString)}` : "");
+  const qrImageSrc = qrString ? `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(qrString)}` : "";
 
   const panelInfoText = useMemo(() => {
     if (!fulfillmentData) return "";
@@ -80,15 +54,14 @@ export function WaitingPaymentClient({ transaction, product, credential }: Waiti
   }, [fulfillmentData]);
 
   useEffect(() => {
-    if (["settlement", "success"].includes(String(status).toLowerCase())) return;
+    if (status === "settlement") return;
     const timer = window.setInterval(async () => {
       try {
         const response = await fetch(waitingUrl, { cache: "no-store" });
         const data = await response.json().catch(() => ({}));
         if (response.ok && data?.status) {
-          const nextStatus = String(data.status);
-          setStatus(nextStatus);
-          if (["settlement", "success"].includes(nextStatus.toLowerCase())) window.location.reload();
+          setStatus(String(data.status));
+          if (String(data.status) === "settlement") window.location.reload();
         }
       } catch {}
     }, 10000);
@@ -111,9 +84,8 @@ export function WaitingPaymentClient({ transaction, product, credential }: Waiti
       const response = await fetch(waitingUrl, { cache: "no-store" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(data?.error || data?.message || "Gagal refresh status."));
-      const nextStatus = String(data.status || "pending");
-      setStatus(nextStatus);
-      if (["settlement", "success"].includes(nextStatus.toLowerCase())) {
+      setStatus(String(data.status || "pending"));
+      if (String(data.status) === "settlement") {
         toast.success("Pembayaran sudah terkonfirmasi.");
         window.location.reload();
         return;
@@ -251,7 +223,7 @@ export function WaitingPaymentClient({ transaction, product, credential }: Waiti
               <div className="brand-card py-4">
                 <div className="brand-kicker">Berlaku sampai</div>
                 <div className="mt-2 text-lg font-black text-[color:var(--foreground)]">
-                  {expiresAt ? new Date(expiresAt).toLocaleString("id-ID") : "Mengikuti gateway"}
+                  {transaction.expires_at ? new Date(transaction.expires_at).toLocaleString("id-ID") : "Mengikuti gateway"}
                 </div>
               </div>
             </div>

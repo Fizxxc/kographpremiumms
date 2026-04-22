@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getPakasirTransactionDetail, normalizePakasirStatus } from "@/lib/pakasir";
 import { syncPakasirOrderState } from "@/lib/payment-reconcile";
+import { fulfillProductOrder } from "@/lib/fulfillment";
 import { buildDeliveryFields } from "@/lib/order-delivery";
 
 type LookupResult =
@@ -12,7 +13,7 @@ type LookupResult =
 async function findTransaction(admin: ReturnType<typeof createAdminSupabaseClient>, orderId: string, publicOrderCode?: string) {
   const base = admin
     .from("transactions")
-    .select("id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, updated_at")
+    .select("id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, gateway_payload, updated_at")
     .eq("order_id", orderId)
     .limit(1);
 
@@ -23,7 +24,7 @@ async function findTransaction(admin: ReturnType<typeof createAdminSupabaseClien
 
   const fallback = await admin
     .from("transactions")
-    .select("id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, updated_at")
+    .select("id, order_id, public_order_code, status, amount, final_amount, buyer_name, buyer_email, product_snapshot, fulfillment_data, gateway_payload, updated_at")
     .eq("order_id", orderId)
     .maybeSingle();
 
@@ -104,26 +105,15 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
     }
 
     await syncPakasirOrderState(orderId).catch(() => null);
+    if (found.kind === "transaction") {
+      await fulfillProductOrder(orderId).catch(() => null);
+    }
 
     const refreshed = await findStatusRow({ orderId, publicOrderCode, explicitType: found.kind });
     const kind = refreshed?.kind || found.kind;
     const row = refreshed?.row || found.row;
     const fulfillment = (row as any).fulfillment_data || {};
     const amount = Number((row as any).final_amount || (row as any).amount || fulfillment.payment_total_amount || 0);
-
-    let credentialFields: Array<{ label: string; value: string }> = [];
-    if (kind === "transaction") {
-      const admin = createAdminSupabaseClient();
-      const { data: credential } = await admin
-        .from("app_credentials")
-        .select("account_data")
-        .eq("transaction_id", (row as any).id)
-        .maybeSingle();
-
-      if (credential?.account_data) {
-        credentialFields = buildDeliveryFields(credential.account_data);
-      }
-    }
 
     let gatewayPayload = fulfillment.provider_response || fulfillment.gateway_payload || (row as any).gateway_payload || null;
 
@@ -169,62 +159,44 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
         gatewayPayload?.qr_string ||
         gatewayPayload?.qris_content ||
         fulfillment.payment_qr_string ||
-        fulfillment.qr_string ||
         null,
       qrUrl:
-        gatewayPayload?.payment?.qr_url ||
-        gatewayPayload?.payment?.qr_image ||
         gatewayPayload?.qr_url ||
         gatewayPayload?.qr_image ||
-        gatewayPayload?.actions?.find?.((item: any) => typeof item?.url === "string" && String(item.url).includes("qr"))?.url ||
+        gatewayPayload?.qris_url ||
         fulfillment.payment_qr_url ||
-        fulfillment.qr_image ||
-        null,
-      qrImage:
-        gatewayPayload?.payment?.qr_url ||
-        gatewayPayload?.payment?.qr_image ||
-        gatewayPayload?.qr_url ||
-        gatewayPayload?.qr_image ||
-        gatewayPayload?.actions?.find?.((item: any) => typeof item?.url === "string" && String(item.url).includes("qr"))?.url ||
-        fulfillment.payment_qr_url ||
-        fulfillment.qr_image ||
         null,
       paymentNumber:
         gatewayPayload?.payment?.payment_number ||
+        gatewayPayload?.payment_no ||
+        gatewayPayload?.payment_number ||
         fulfillment.payment_number ||
-        fulfillment.payment_qr_string ||
         null,
       expiresAt:
         gatewayPayload?.payment?.expired_at ||
         gatewayPayload?.expired_at ||
+        gatewayPayload?.expires_at ||
         fulfillment.payment_expires_at ||
         null,
-      statusLabel:
-        normalizedStatus === "success"
-          ? "Pembayaran berhasil diterima"
-          : normalizedStatus === "failed"
-          ? "Pembayaran tidak berhasil"
-          : "Menunggu pembayaran",
-      statusMessage:
+      paymentUrl: fulfillment.payment_fallback_url || null,
+      credentialStatus: fulfillment.delivery_status || null,
+      updatedAt: (row as any).updated_at || null,
+      invoiceUrl: (row as any).public_order_code
+        ? `/api/invoice/${encodeURIComponent(orderId)}?resi=${encodeURIComponent(String((row as any).public_order_code))}&download=1`
+        : null,
+      credentialReady: deliveryFields.length > 0,
+      deliveryFields,
+      message:
         normalizedStatus === "success"
           ? kind === "topup"
-            ? "Top up berhasil diproses dan saldo akan segera masuk ke akun Anda."
+            ? "Pembayaran berhasil dan saldo sedang diproses ke akun Anda."
             : "Pembayaran berhasil. Pesanan Anda sedang diproses dan detailnya bisa dicek kembali dari halaman ini."
           : normalizedStatus === "failed"
-          ? "Pembayaran tidak dapat diselesaikan. Silakan buat pesanan baru atau hubungi admin bila diperlukan."
-          : "Lakukan pembayaran terlebih dahulu. Status akan diperbarui otomatis setelah sistem menerima konfirmasi.",
-      credentialStatus: fulfillment.delivery_status || null,
-      credentialFields,
-      updatedAt: (row as any).updated_at || null,
+          ? "Transaksi sudah tidak aktif. Silakan buat pesanan baru bila Anda masih ingin melanjutkan pembelian."
+          : "QRIS sudah tersedia. Silakan selesaikan pembayaran agar pesanan dapat segera diproses."
     });
   } catch (error) {
-    console.error("public-order-status error", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Gagal mengambil status pesanan.",
-        code: "PUBLIC_STATUS_ERROR"
-      },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Gagal mengambil status pesanan.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

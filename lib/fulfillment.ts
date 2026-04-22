@@ -267,7 +267,7 @@ export async function fulfillProductOrder(orderId: string) {
   const { data: tx, error } = await admin
     .from("transactions")
     .select(
-      `id, order_id, user_id, product_id, status, coupon_code, telegram_id, payment_method, final_amount, fulfillment_data, email_sent_at, buyer_name, buyer_email, guest_name, guest_email,
+      `id, order_id, user_id, product_id, status, coupon_code, telegram_id, payment_method, final_amount, fulfillment_data, guest_name, guest_email,
        products ( id, name, service_type, pterodactyl_config, sold_count, stock, live_chat_enabled, support_admin_ids )`
     )
     .eq("order_id", orderId)
@@ -286,7 +286,7 @@ export async function fulfillProductOrder(orderId: string) {
     isChatBasedService(product.service_type) || Boolean(product.live_chat_enabled);
   const isStockManaged = isStockManagedService(product.service_type);
   const currentStatus = String((tx as any).status || "pending").toLowerCase();
-  const isPaid = ["settlement", "capture"].includes(currentStatus);
+  const isPaid = ["settlement", "capture", "success", "paid", "completed"].includes(currentStatus);
 
   if (!isPaid) {
     return { pending: true, status: currentStatus };
@@ -297,22 +297,6 @@ export async function fulfillProductOrder(orderId: string) {
       p_order_id: orderId,
     });
     if (rpcError) throw new Error(rpcError.message);
-
-    if (data?.fulfilled && !data?.already_settled) {
-      const { error: soldCountError } = await admin
-        .from("products")
-        .update({ sold_count: Number(product.sold_count || 0) + 1 })
-        .eq("id", product.id);
-
-      if (soldCountError) throw new Error(soldCountError.message);
-    }
-
-    if (data?.fulfilled && !data?.already_settled && (tx as any).email_sent_at) {
-      await admin
-        .from("transactions")
-        .update({ email_sent_at: null })
-        .eq("id", (tx as any).id);
-    }
 
     await notifyTelegramProduct(tx, product.name, null);
     await sendTransactionPaidEmail(orderId).catch((mailError) => {

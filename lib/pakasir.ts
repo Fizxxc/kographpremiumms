@@ -9,8 +9,6 @@ type PakasirCreateResponse = {
     total_payment?: number;
     payment_method?: string;
     payment_number?: string;
-    qr_url?: string;
-    qr_image?: string;
     expired_at?: string;
   };
   [key: string]: any;
@@ -105,7 +103,6 @@ export async function createPakasirTransaction(input: {
   }
 
   const payment = payload.payment || {};
-  const normalizedMethod = String(payment.payment_method || method || "qris").trim().toLowerCase();
   return {
     payment,
     orderId: String(payment.order_id || input.orderId),
@@ -114,8 +111,7 @@ export async function createPakasirTransaction(input: {
     totalPayment: Number(payment.total_payment || payment.amount || input.amount || 0),
     paymentMethod: String(payment.payment_method || method || "qris"),
     paymentNumber: String(payment.payment_number || ""),
-    qrString: normalizedMethod === "qris" ? String(payment.payment_number || "") : "",
-    qrUrl: payment.qr_url ? String(payment.qr_url) : (payment.qr_image ? String(payment.qr_image) : null),
+    qrString: String(payment.payment_method || method) === "qris" ? String(payment.payment_number || "") : "",
     expiresAt: payment.expired_at ? String(payment.expired_at) : null,
     raw: payload
   };

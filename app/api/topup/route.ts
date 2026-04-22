@@ -48,7 +48,6 @@ export async function POST(request: Request) {
       fulfillment_data: {
         payment_provider: "pakasir",
         payment_qr_string: qris.qrString || null,
-        payment_qr_url: qris.qrUrl || null,
         payment_total_amount: qris.totalPayment || amount,
         payment_fee: qris.fee || 0,
         payment_expires_at: qris.expiresAt || null,
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
       gateway: "pakasir",
       amount,
       qrString: qris.qrString,
-      qrUrl: qris.qrUrl || null,
+      qrUrl: null,
       paymentUrl,
       expiresAt: qris.expiresAt,
       waitingPaymentUrl: `/waiting-payment/${orderId}?resi=${publicOrderCode}&type=topup`

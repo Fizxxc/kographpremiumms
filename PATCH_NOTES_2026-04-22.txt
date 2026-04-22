@@ -1,0 +1,9 @@
+Patch focus:
+- credential otomatis muncul di halaman sukses pembayaran
+- fulfill order dipaksa sinkron ulang setelah status paid/success
+- stok produk otomatis berkurang dan sold_count bertambah lewat RPC yang idempotent
+- invoice route ikut memicu sinkronisasi + fulfill ulang jika webhook sempat terlewat
+- parser credential mendukung format satu baris seperti email:password atau username:password
+
+SQL yang perlu dijalankan di Supabase:
+- supabase/2026-04-22-fix-credential-stock-sync.sql

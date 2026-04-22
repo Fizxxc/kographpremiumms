@@ -33,12 +33,15 @@ type StatusData = {
   } | null;
   qrString?: string | null;
   qrUrl?: string | null;
-  qrImage?: string | null;
   paymentNumber?: string | null;
   expiresAt?: string | null;
   paymentUrl?: string | null;
   updatedAt?: string | null;
-  credentialFields?: Array<{ label: string; value: string }>;
+  credentialReady?: boolean;
+  deliveryFields?: {
+    label: string;
+    value: string;
+  }[];
 };
 
 type PaymentStatusClientProps = {
@@ -234,12 +237,11 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
 
   const qrImageSrc = useMemo(() => {
     if (statusData?.qrUrl) return statusData.qrUrl;
-    if (statusData?.qrImage) return statusData.qrImage;
     if (statusData?.qrString) {
       return `https://api.qrserver.com/v1/create-qr-code/?size=520x520&data=${encodeURIComponent(statusData.qrString)}`;
     }
     return null;
-  }, [statusData?.qrString, statusData?.qrUrl, statusData?.qrImage]);
+  }, [statusData?.qrString, statusData?.qrUrl]);
 
   const paymentReference = useMemo(() => {
     const raw = String(statusData?.paymentNumber || "").trim();
@@ -252,7 +254,6 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
   const invoiceHref = statusData?.publicOrderCode
     ? `/api/invoice/${encodeURIComponent(orderId)}?resi=${encodeURIComponent(statusData.publicOrderCode)}&download=1`
     : null;
-  const credentialFields = Array.isArray(statusData?.credentialFields) ? statusData.credentialFields : [];
 
   const handleCopy = (key: string, value?: string | null) => {
     if (!value) return;
@@ -329,32 +330,52 @@ export default function PaymentStatusClient({ orderId, publicOrderCode, type }: 
                   </div>
                 </div>
 
-                {credentialFields.length && status === "success" ? (
-                  <section className="rounded-[30px] border border-emerald-400/25 bg-emerald-400/10 p-5 sm:p-6">
-                    <div className="max-w-3xl">
-                      <p className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/80">
-                        Credential pembelian
-                      </p>
-                      <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
-                        Data akun sudah tersedia
-                      </h2>
-                      <p className="mt-3 text-sm leading-7 text-slate-200/85">
-                        Simpan data ini baik-baik dan jangan dibagikan ke orang lain. Semua detail yang sama juga ikut masuk ke invoice PDF saat sudah tersedia.
-                      </p>
+
+                {status === "success" ? (
+                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_20px_80px_rgba(2,6,23,0.22)]">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.4em] text-yellow-300">Credential / Delivery</p>
+                        <h3 className="mt-2 text-xl font-black text-white">
+                          {statusData?.credentialReady ? "Credential sudah siap" : "Credential sedang disiapkan"}
+                        </h3>
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
+                          {statusData?.credentialReady
+                            ? "Gunakan data berikut untuk login atau mengakses layanan yang sudah Anda beli."
+                            : "Pembayaran sudah diterima. Sistem sedang menyelaraskan credential. Refresh halaman ini beberapa saat lagi bila data belum muncul."}
+                        </p>
+                      </div>
+
+                      {statusData?.credentialReady && statusData.deliveryFields?.length ? (
+                        <button
+                          type="button"
+                          onClick={() => safeCopy(statusData.deliveryFields?.map((field) => `${field.label}: ${field.value}`).join("\n") || "")}
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 text-sm font-semibold text-white transition hover:border-primary/40 hover:bg-primary/10"
+                        >
+                          <Copy className="h-4 w-4" />
+                          Salin credential
+                        </button>
+                      ) : null}
                     </div>
-                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                      {credentialFields.map((field) => (
-                        <div key={`${field.label}-${field.value}`} className="rounded-[24px] border border-white/10 bg-[#071b35]/85 p-4">
-                          <div className="text-[11px] font-black uppercase tracking-[0.32em] text-slate-400">{field.label}</div>
-                          <div className="mt-3 break-words text-base font-semibold text-white sm:text-lg">{field.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+
+                    {statusData?.credentialReady && statusData.deliveryFields?.length ? (
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        {statusData.deliveryFields.map((field) => (
+                          <div key={`${field.label}-${field.value}`} className="rounded-[24px] border border-white/10 bg-[#071b35]/85 p-4">
+                            <div className="text-[11px] font-black uppercase tracking-[0.35em] text-slate-500">{field.label}</div>
+                            <div className="mt-2 whitespace-pre-wrap break-words text-base font-bold text-white">{field.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-[24px] border border-dashed border-white/12 bg-[#071b35]/70 p-4 text-sm leading-7 text-slate-300">
+                        Credential belum muncul di transaksi ini. Pastikan stok credential tersedia di admin panel, lalu tekan refresh status.
+                      </div>
+                    )}
+                  </div>
                 ) : null}
 
-                <div className="flex flex-wrap gap-3">
-                  {statusData?.publicOrderCode ? (
+                <div className="flex flex-wrap gap-3">                  {statusData?.publicOrderCode ? (
                     <Link
                       href={`/cek-pesanan?resi=${encodeURIComponent(statusData.publicOrderCode)}`}
                       className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-bold text-slate-950 transition hover:opacity-90"

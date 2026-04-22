@@ -3,6 +3,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { generateInvoicePdf } from "@/lib/pdf";
 import { buildDeliveryFields } from "@/lib/order-delivery";
+import { syncPakasirOrderState } from "@/lib/payment-reconcile";
+import { fulfillProductOrder } from "@/lib/fulfillment";
 
 export async function GET(request: Request, { params }: { params: { orderId: string } }) {
   try {
@@ -68,6 +70,17 @@ export async function GET(request: Request, { params }: { params: { orderId: str
         { status: 404 }
       );
     }
+
+    await syncPakasirOrderState(orderId).catch(() => null);
+    await fulfillProductOrder(orderId).catch(() => null);
+
+    const refreshed = await admin
+      .from("transactions")
+      .select(selectFields)
+      .eq("id", (tx as any).id)
+      .maybeSingle();
+
+    tx = refreshed.data || tx;
 
     const { data: credential } = await admin
       .from("app_credentials")
