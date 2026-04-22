@@ -139,12 +139,19 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
     const normalizedStatus = normalizedGatewayStatus === "settlement"
       ? "success"
       : normalizedGatewayStatus === "expire"
-      ? "failed"
-      : "pending";
+        ? "failed"
+        : "pending";
 
     let credentialRow: { id: string; account_data: string | null } | null = null;
+
     if (kind === "transaction" && normalizedStatus === "success") {
-      await admin.rpc("fulfill_transaction", { p_order_id: orderId }).catch(() => null);
+      const { error: fulfillError } = await admin.rpc("fulfill_transaction", {
+        p_order_id: orderId,
+      });
+
+      if (fulfillError) {
+        console.error("[public-order-status] fulfill_transaction failed:", fulfillError);
+      }
 
       const { data: refreshedTransaction } = await admin
         .from("transactions")
@@ -152,7 +159,10 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
         .eq("id", (row as any).id)
         .maybeSingle();
 
-      if (refreshedTransaction?.fulfillment_data && typeof refreshedTransaction.fulfillment_data === "object") {
+      if (
+        refreshedTransaction?.fulfillment_data &&
+        typeof refreshedTransaction.fulfillment_data === "object"
+      ) {
         fulfillment = refreshedTransaction.fulfillment_data as Record<string, any>;
       }
 
@@ -219,11 +229,11 @@ export async function GET(request: NextRequest, { params }: { params: { orderId:
           ? kind === "topup"
             ? "Pembayaran berhasil dan saldo sedang diproses ke akun Anda."
             : deliveryFields.length > 0
-            ? "Pembayaran berhasil dan credential sudah siap digunakan."
-            : "Pembayaran berhasil. Credential sedang disiapkan otomatis oleh sistem."
+              ? "Pembayaran berhasil dan credential sudah siap digunakan."
+              : "Pembayaran berhasil. Credential sedang disiapkan otomatis oleh sistem."
           : normalizedStatus === "failed"
-          ? "Transaksi sudah tidak aktif. Silakan buat pesanan baru bila Anda masih ingin melanjutkan pembelian."
-          : "QRIS sudah tersedia. Silakan selesaikan pembayaran agar pesanan dapat segera diproses."
+            ? "Transaksi sudah tidak aktif. Silakan buat pesanan baru bila Anda masih ingin melanjutkan pembelian."
+            : "QRIS sudah tersedia. Silakan selesaikan pembayaran agar pesanan dapat segera diproses."
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal mengambil status pesanan.";
